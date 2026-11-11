@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#15251e" />
+    <meta
+      name="description"
+      content="Theo dõi bảng xếp hạng, khám phá và nghiên cứu tăng trưởng game trên Google Play và App Store."
+    />
+    <title>CheckTopGame — Game market radar</title>
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="stylesheet" href="./style.css" />
+    <script type="module" src="./app.js"></script>
+  </head>
+  <body>
+    <aside class="sidebar">
+      <a class="brand" href="./" aria-label="CheckTopGame trang chủ"
+        ><span class="brand-mark">c<span>↗</span></span
+        ><span
+          >checktop<span class="brand-light">game</span
+          ><small>GAME MARKET RADAR</small></span
+        ></a
+      >
+      <div class="workspace">
+        <span class="workspace-icon">C</span>
+        <div>Workspace cá nhân<small>Market intelligence</small></div>
+        <span class="workspace-dot"></span>
+      </div>
+      <p class="nav-label">KHÁM PHÁ</p>
+      <nav aria-label="Điều hướng chính">
+        <button class="nav-item active" data-view="overview">
+          <span data-icon="grid"></span>Tổng quan
+        </button>
+        <button class="nav-item" data-view="ranking">
+          <span data-icon="chart"></span>Bảng xếp hạng
+        </button>
+        <button class="nav-item" data-view="watchlist">
+          <span data-icon="bookmark"></span>Đang theo dõi
+          <span class="nav-count" id="watch-count">0</span>
+        </button>
+        <button class="nav-item" data-view="sources">
+          <span data-icon="database"></span>Nguồn dữ liệu
+        </button>
+      </nav>
+      <div class="sidebar-note">
+        <span class="live-dot"></span><strong>Luôn bắt nhịp thị trường</strong>
+        <p>Lưu dấu biến động mỗi ngày.<br />Nhìn thấy xu hướng dài hạn.</p>
+        <span class="note-chart">▁ ▂ ▁ ▃ ▂ ▄ ▃ ▅ ▄ ▆ ▇ █</span>
+      </div>
+      <div class="sidebar-bottom">
+        <span class="avatar">CT</span>
+        <div>CheckTopGame<small>Independent game research</small></div>
+        <a
+          href="https://github.com/bazookaleducanhpa-source/CheckTopGame"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Mở mã nguồn GitHub"
+          >↗</a
+        >
+      </div>
+    </aside>
+    <div class="main-shell">
+      <header class="topbar">
+        <div class="breadcrumb">
+          Workspace <span>/</span> <strong id="breadcrumb">Tổng quan</strong>
+        </div>
+        <label class="search"
+          ><span data-icon="search"></span
+          ><input
+            id="search"
+            type="search"
+            placeholder="Tìm game, nhà phát hành…"
+            aria-label="Tìm game hoặc nhà phát hành"
+          /><kbd>/</kbd></label
+        >
+        <button
+          class="icon-button"
+          id="help"
+          aria-label="Thông tin phương pháp"
+        >
+          <span data-icon="help"></span>
+        </button>
+        <span class="avatar top-avatar">CT</span>
+      </header>
+      <main>
+        <section class="page-heading">
+          <div>
+            <div class="eyebrow">
+              <span class="live-dot"></span> GAME INTELLIGENCE
+            </div>
+            <h1 id="page-title">Nắm bắt nhịp tăng trưởng<span>.</span></h1>
+            <p id="page-description">
+              Khám phá game nổi bật. Theo dõi chuyển động. Đi trước xu hướng.
+            </p>
+          </div>
+          <button class="button button-white" id="refresh">
+            <span data-icon="refresh"></span><span>Cập nhật dữ liệu</span>
+          </button>
+        </section>
+        <div class="data-status" id="data-status" role="status">
+          Đang kết nối dữ liệu…
+        </div>
+        <div id="load-error" class="empty-state" hidden></div>
+        <div id="dashboard" hidden>
+          <section
+            class="stats"
+            id="stats"
+            aria-label="Tổng hợp dữ liệu"
+          ></section>
+          <section id="spotlight-section" class="spotlight-section">
+            <div class="section-title">
+              <div>
+                <span class="eyebrow muted">TRÊN RADAR</span>
+                <h2>
+                  Những cái tên đáng chú ý <span class="pill">TOP CHARTS</span>
+                </h2>
+              </div>
+              <span class="section-caption">Dẫn đầu bảng game miễn phí</span>
+            </div>
+            <div class="spotlights" id="spotlights"></div>
+          </section>
+          <section class="ranking-panel" id="ranking-panel">
+            <div class="panel-heading">
+              <div>
+                <h2 id="table-title">Toàn cảnh thị trường</h2>
+                <p>Game và những tín hiệu bạn cần theo dõi.</p>
+              </div>
+              <button class="button button-white small" id="export">
+                <span data-icon="download"></span>Xuất CSV
+              </button>
+            </div>
+            <div class="filters">
+              <div class="segments" aria-label="Chọn nền tảng">
+                <button data-platform="" class="selected">Tất cả</button
+                ><button data-platform="android">Google Play</button
+                ><button data-platform="ios">App Store</button>
+              </div>
+              <div class="filter-right">
+                <label class="select-wrap"
+                  ><span data-icon="globe"></span
+                  ><select id="country" aria-label="Thị trường">
+                    <option value="vn">Việt Nam</option>
+                    <option value="us">Hoa Kỳ</option>
+                  </select></label
+                ><select id="genre" aria-label="Thể loại">
+                  <option value="">Mọi thể loại</option>
+                </select>
+                <div class="segments periods" aria-label="Kỳ so sánh">
+                  <button data-days="7" class="selected">Tuần</button
+                  ><button data-days="30">Tháng</button
+                  ><button data-days="365">Năm</button>
+                </div>
+              </div>
+            </div>
+            <div class="table-meta">
+              <span id="result-count"></span
+              ><label
+                >Sắp xếp:
+                <select id="sort">
+                  <option value="rank">Thứ hạng hiện tại</option>
+                  <option value="growth">Tăng trưởng lượt tải</option>
+                  <option value="acceleration">Tăng tốc lượt tải</option>
+                  <option value="downloads">Lượt tải trong kỳ</option>
+                  <option value="movement">Tăng hạng trong kỳ</option>
+                  <option value="ratings">Tăng số đánh giá</option>
+                  <option value="score">Điểm đánh giá</option>
+                </select></label
+              >
+            </div>
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th class="rank-col">HẠNG</th>
+                    <th>GAME / NHÀ PHÁT HÀNH</th>
+                    <th>NỀN TẢNG</th>
+                    <th>LƯỢT TẢI / KỲ</th>
+                    <th>TĂNG TRƯỞNG</th>
+                    <th>ĐỔI HẠNG</th>
+                    <th>ĐÁNH GIÁ</th>
+                    <th aria-label="Theo dõi"></th>
+                  </tr>
+                </thead>
+                <tbody id="game-rows"></tbody>
+              </table>
+            </div>
+            <div id="empty" class="empty-state" hidden>
+              <span data-icon="search"></span>
+              <h3>Chưa có game phù hợp</h3>
+              <p>Thử đổi bộ lọc hoặc thêm game vào danh sách theo dõi.</p>
+              <button class="button button-white" id="reset">
+                Đặt lại bộ lọc
+              </button>
+            </div>
+            <div class="table-footer">
+              <span id="pagination-info"></span>
+              <div>
+                <button class="button button-white small" id="prev">
+                  ← Trước</button
+                ><button class="button button-white small" id="next">
+                  Sau →
+                </button>
+              </div>
+            </div>
+          </section>
+          <section id="sources-panel" hidden></section>
+          <div class="method-note">
+            <span data-icon="info"></span>
+            <p>
+              <strong>Dữ liệu rõ nguồn, quyết định rõ ràng.</strong> Lượt tải
+              theo kỳ cần nguồn báo cáo riêng. Thứ hạng và đánh giá là các tín
+              hiệu độc lập. Lịch sử được tích lũy từ ngày bắt đầu thu thập.
+              <button id="method-link">Xem phương pháp ↗</button>
+            </p>
+          </div>
+        </div>
+        <footer>
+          <span>© <span id="year"></span> CheckTopGame</span
+          ><span
+            >Built for the next big discovery
+            <span class="footer-star">✳</span></span
+          >
+        </footer>
+      </main>
+    </div>
+    <dialog id="detail" class="detail-dialog">
+      <button class="dialog-close icon-button" aria-label="Đóng chi tiết">
+        ✕
+      </button>
+      <div id="detail-content"></div>
+    </dialog>
+    <dialog id="method" class="method-dialog">
+      <button class="dialog-close icon-button" aria-label="Đóng thông tin">
+        ✕
+      </button>
+      <div class="eyebrow">BEHIND THE NUMBERS</div>
+      <h2>Hiểu đúng những con số.</h2>
+      <p>
+        Tool đọc bảng game miễn phí trên Google Play và Apple RSS, lấy thông tin
+        chi tiết từ trang game và Apple Lookup. Mặc định theo dõi top 30 cho mỗi
+        nền tảng tại Việt Nam và Hoa Kỳ.
+      </p>
+      <h3>Lượt tải & tăng trưởng</h3>
+      <p>
+        Nguồn công khai đang dùng không cung cấp lượt tải hằng ngày cho mọi
+        game. Android hiển thị mốc lượt cài đặt tích lũy công khai, có phạm vi
+        toàn cầu; đây không phải lượt tải trong kỳ hay tại thị trường đã chọn.
+        iOS không có chỉ số này.
+      </p>
+      <p>
+        Nhập báo cáo lượt tải hằng ngày bằng
+        <code>npm run import -- downloads.json</code>. Website chỉ cộng kỳ khi
+        đủ tất cả ngày. Tăng trưởng cần đủ hai kỳ; tăng tốc cần ba kỳ liên tiếp.
+        Nguồn có ước tính được gắn nhãn “Ước tính”.
+      </p>
+      <h3>Tuần / tháng / năm</h3>
+      <p>
+        Tương ứng 7 / 30 / 365 ngày liên tiếp, tính đến ngày UTC hiện tại. Đổi
+        hạng = hạng đầu kỳ − hạng mới nhất. Chỉ so sánh khi có quan sát gần mốc
+        đầu kỳ (tối đa 2 ngày trước mốc). Thiếu lịch sử sẽ hiển thị “—”.
+      </p>
+      <h3>Cập nhật liên tục</h3>
+      <p>
+        Khi chạy server, tool cập nhật mỗi 6 giờ. GitHub Actions cũng được cấu
+        hình chạy mỗi 6 giờ để lưu lịch sử vào repository; lịch thực tế phụ
+        thuộc GitHub. Trang đang mở tự kiểm tra dữ liệu mỗi 5 phút.
+      </p>
+      <h3>Danh sách theo dõi</h3>
+      <p>
+        Được lưu trên trình duyệt hiện tại. Các bản Android/iOS và thị trường
+        được theo dõi riêng để tránh ghép nhầm sản phẩm.
+      </p>
+      <a
+        class="button button-dark"
+        href="https://github.com/bazookaleducanhpa-source/CheckTopGame#readme"
+        target="_blank"
+        rel="noopener noreferrer"
+        >Hướng dẫn & mã nguồn ↗</a
+      >
+    </dialog>
+    <div class="toast" id="toast" role="status" hidden></div>
+  </body>
+</html>

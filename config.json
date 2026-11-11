@@ -1,0 +1,5 @@
+{
+  "countries": ["vn", "us"],
+  "limit": 30,
+  "intervalHours": 6
+}

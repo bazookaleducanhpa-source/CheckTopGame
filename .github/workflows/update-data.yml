@@ -1,0 +1,39 @@
+name: Update game data
+on:
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: game-data
+  cancel-in-progress: false
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - name: Collect real store data
+        id: collect
+        continue-on-error: true
+        run: npm run collect
+      - name: Save snapshots and source health
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/data/catalog.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'data: update game charts and daily history'
+            git pull --rebase origin main
+            git push
+          fi
+      - name: Report provider failure
+        if: steps.collect.outcome == 'failure'
+        run: exit 1
