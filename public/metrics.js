@@ -161,12 +161,82 @@ export function analyze(game, data, days, day = dateKey(new Date())) {
     downloadScope: series?.scope ?? game.country,
     downloadAsOf: series?.latest ?? day,
     downloadMetric: series?.metric ?? null,
+    lifetimeDownloads: lifetimeDownloadsFor(game, data, day),
     downloads: downloadMetrics(
       series?.records ?? [],
       series?.latest ?? day,
       days,
     ),
   };
+}
+
+export function lifetimeDownloadsFor(game, data, today = dateKey(new Date())) {
+  const unavailable = {
+    value: null,
+    kind: "unavailable",
+    scope: "global",
+    date: null,
+    source: null,
+    sourceUrl: null,
+  };
+  // A partial daily history is never treated as the lifetime total, especially on iOS.
+  if (game.platform !== "android") return unavailable;
+  const id = game.id ?? game.key.split(":").slice(2).join(":");
+  const validCount = (value) => Number.isSafeInteger(value) && value >= 0;
+  const candidates = (data.installReadings ?? []).filter(
+    (p) =>
+      p.id === id &&
+      validCount(p.total) &&
+      /^\d{4}-\d{2}-\d{2}$/.test(p.date) &&
+      p.date <= today,
+  );
+  if (
+    validCount(game.publicInstalls) &&
+    (!game.lastSeen || game.lastSeen.slice(0, 10) <= today)
+  )
+    candidates.push({
+      total: game.publicInstalls,
+      date: game.lastSeen?.slice(0, 10) ?? "",
+      collectedAt: game.lastSeen,
+      provider: "google-play",
+      sourceUrl: game.url,
+    });
+  const latest = candidates.sort(
+    (a, b) =>
+      b.date.localeCompare(a.date) ||
+      Number(b.provider === "google-play") -
+        Number(a.provider === "google-play") ||
+      String(b.collectedAt ?? "").localeCompare(String(a.collectedAt ?? "")),
+  )[0];
+  if (latest)
+    return {
+      value: latest.total,
+      kind: "counter",
+      scope: "global",
+      date: latest.date || null,
+      source:
+        {
+          "google-play": "Google Play",
+          civcharts: "CivCharts / Google Play",
+          appcurves: "AppCurves / Google Play",
+        }[latest.provider] ?? latest.provider,
+      sourceUrl: latest.sourceUrl ?? game.url,
+    };
+  const band = validCount(game.minInstalls)
+    ? game.minInstalls
+    : /^\s*[\d,.]+\+\s*$/.test(game.installs ?? "")
+      ? Number(game.installs.replace(/[^\d]/g, ""))
+      : null;
+  return validCount(band)
+    ? {
+        value: band,
+        kind: "lower-bound",
+        scope: "global",
+        date: game.lastSeen?.slice(0, 10) ?? null,
+        source: "Google Play · mốc công khai",
+        sourceUrl: game.url,
+      }
+    : unavailable;
 }
 
 export function searchTerm(value) {
@@ -213,6 +283,7 @@ export function selectGames(games, filters, watchlist = []) {
     movement: (g) => g.rankChange,
     ratings: (g) => g.ratingsChange,
     score: (g) => g.score,
+    lifetime: (g) => g.lifetimeDownloads?.value,
   };
   const get = getters[filters.sort] ?? getters.rank;
   return list.sort(

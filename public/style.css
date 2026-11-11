@@ -859,6 +859,36 @@ td:first-child {
   align-items: center;
   gap: 6px;
 }
+.lifetime-value {
+  font-weight: 600;
+  color: #47603a;
+  font-variant-numeric: tabular-nums;
+}
+.lifetime-card {
+  background: #f1f6e9;
+  border: 1px solid #dfe9d2;
+  border-radius: 9px;
+  padding: 18px;
+  margin: 20px 0;
+}
+.lifetime-card strong {
+  display: block;
+  font:
+    600 29px "DM Sans",
+    var(--font);
+  margin-top: 10px;
+  color: #496638;
+  overflow-wrap: anywhere;
+}
+.lifetime-card p {
+  font-size: 10px;
+  line-height: 1.9;
+  color: #81916e;
+  margin: 10px 0 0;
+}
+.lifetime-card a {
+  text-decoration: underline;
+}
 .search-context {
   margin: 18px 20px 0;
   padding: 15px;

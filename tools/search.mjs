@@ -5,6 +5,7 @@ import { searchTerm } from "../public/metrics.js";
 function googleGame(app, country) {
   return {
     key: `android:${country}:${app.appId}`,
+    lastSeen: new Date().toISOString(),
     id: app.appId,
     platform: "android",
     country,
@@ -30,6 +31,7 @@ function googleGame(app, country) {
 function appleGame(app, country) {
   return {
     key: `ios:${country}:${app.trackId}`,
+    lastSeen: new Date().toISOString(),
     id: String(app.trackId),
     platform: "ios",
     country,

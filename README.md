@@ -25,6 +25,7 @@ npm run collect
 - Lọc thị trường Việt Nam / Hoa Kỳ, Android / iOS, thể loại. Ô tìm kiếm tìm trên toàn danh mục, hỗ trợ tiếng Việt không dấu, tên game, nhà phát hành, package ID, App Store ID và link cửa hàng; không bị bộ lọc bảng xếp hạng che kết quả.
 - Khi chạy server, tìm trực tiếp Google Play và App Store tại VN/US sau khi ngừng gõ hoặc nhấn Enter. Có thể mở chi tiết và lưu theo dõi game ngoài top 100; thông tin game đã lưu giữ trên trình duyệt sau khi tải lại trang. Game tìm thấy chưa chắc có lịch sử lượt tải.
 - Xem icon, ảnh chụp màn hình, mô tả, phiên bản, đánh giá và link mở trực tiếp cửa hàng.
+- Cột **Tổng lượt tải** và thẻ tổng tích lũy trong chi tiết game: Android dùng bộ đếm công khai mới nhất, có nguồn/ngày quan sát/phạm vi toàn cầu; nếu chỉ có mốc thì giữ dấu `+`. Có sắp xếp theo tổng và xuất CSV. iOS chưa có tổng tích lũy tại nguồn đang dùng sẽ hiển thị thiếu dữ liệu, không cộng lịch sử ngắn hạn thành tổng toàn thời gian.
 - Lưu / bỏ theo dõi game bằng localStorage, giữ danh sách sau khi tải lại trang và đồng bộ giữa các tab cùng trình duyệt.
 - Lưu lịch sử mỗi game/thị trường/nền tảng theo ngày UTC; vẽ biểu đồ thứ hạng khi đủ quan sát.
 - Chọn kỳ 7 / 30 / 365 ngày; sắp xếp theo thứ hạng, tăng hạng, điểm, biến động đánh giá hoặc chỉ số lượt tải khi có dữ liệu.

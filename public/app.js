@@ -224,6 +224,22 @@ function downloadCell(g) {
         : "Theo báo cáo";
   return `${g.downloads.total == null ? '<span class="empty-value">—</span>' : compact(g.downloads.total)}<span class="cell-sub">${g.downloads.total == null ? `${g.downloads.count}/${filters.days} ngày dữ liệu` : label}</span><span class="cell-sub">${g.downloadScope === "global" ? "Toàn cầu" : esc(countryName(g.downloadScope))} · đến ${g.downloadAsOf}</span>`;
 }
+function lifetimeValue(game) {
+  const total = game.lifetimeDownloads;
+  return total?.value == null
+    ? "—"
+    : `${fmt(total.value)}${total.kind === "lower-bound" ? "+" : ""}`;
+}
+function lifetimeCell(game) {
+  const total = game.lifetimeDownloads;
+  if (total?.value == null)
+    return '<span class="empty-value">—</span><span class="cell-sub">Chưa có tổng tích lũy</span>';
+  return `<span class="lifetime-value" title="${esc(total.source)} · ${esc(total.date ?? "Chưa rõ ngày")}">${lifetimeValue(game)}</span><span class="cell-sub">Toàn cầu · ${total.kind === "lower-bound" ? "mốc tối thiểu" : "bộ đếm cài đặt"}</span><span class="cell-sub">${esc(total.date ?? "Chưa rõ ngày")}</span>`;
+}
+function lifetimeCard(game) {
+  const total = game.lifetimeDownloads;
+  return `<section class="lifetime-card" aria-label="Tổng lượt tải của game"><div><span class="eyebrow">TỔNG LƯỢT TẢI / CÀI ĐẶT</span><strong>${total?.value == null ? "Chưa có tổng tích lũy" : lifetimeValue(game)}</strong></div><p>${total?.value == null ? "Nguồn hiện tại chưa cung cấp tổng tích lũy cho game này. Số lượt tải theo kỳ (nếu có) nằm ở biểu đồ bên dưới." : `Phạm vi toàn cầu · ${total.kind === "lower-bound" ? "Mốc tối thiểu do Google Play công bố" : "Bộ đếm cài đặt công khai, không phải số người dùng duy nhất"}.<br>Nguồn: ${esc(total.source)} · Quan sát ${esc(total.date ?? "chưa rõ ngày")}. <a href="${safeUrl(total.sourceUrl)}" target="_blank" rel="noopener noreferrer">Xem nguồn ↗</a>`}</p></section>`;
+}
 function renderTable() {
   const searching = !!filters.search;
   if (searching) {
@@ -258,7 +274,7 @@ function renderTable() {
   $("#game-rows").innerHTML = rows
     .map(
       (g) =>
-        `<tr><td>${g.fresh && g.latest?.rank != null ? `#${g.latest.rank.toString().padStart(2, "0")}` : '<span class="empty-value">—</span>'}</td><td class="game-cell">${gamePreview(g)}</td><td>${platform(g)}</td><td>${downloadCell(g)}</td><td>${badge(g.downloads.growth)}${g.downloads.growth !== null && g.downloads.comparisonEstimated ? '<span class="cell-sub">Có dữ liệu ước tính</span>' : ""}</td><td>${badge(g.rankChange, "")}<span class="cell-sub">${g.rankChange == null ? "Chưa đủ lịch sử" : `Trong ${filters.days} ngày`}</span></td><td>${g.score == null ? "—" : `${fmt(g.score)} <span class="star">★</span>`}<span class="cell-sub">${compact(g.ratings)} đánh giá</span></td><td>${watchButton(g)}</td></tr>`,
+        `<tr><td>${g.fresh && g.latest?.rank != null ? `#${g.latest.rank.toString().padStart(2, "0")}` : '<span class="empty-value">—</span>'}</td><td class="game-cell">${gamePreview(g)}</td><td>${platform(g)}</td><td>${lifetimeCell(g)}</td><td>${downloadCell(g)}</td><td>${badge(g.downloads.growth)}${g.downloads.growth !== null && g.downloads.comparisonEstimated ? '<span class="cell-sub">Có dữ liệu ước tính</span>' : ""}</td><td>${badge(g.rankChange, "")}<span class="cell-sub">${g.rankChange == null ? "Chưa đủ lịch sử" : `Trong ${filters.days} ngày`}</span></td><td>${g.score == null ? "—" : `${fmt(g.score)} <span class="star">★</span>`}<span class="cell-sub">${compact(g.ratings)} đánh giá</span></td><td>${watchButton(g)}</td></tr>`,
     )
     .join("");
   $("#empty").hidden = rows.length > 0;
@@ -357,6 +373,7 @@ function openDetail(key) {
     `<div class="eyebrow">GAME PROFILE · ${esc(countryName(game.country))}</div>
     <div class="detail-top">${image(game)}<div><h2>${esc(game.title)}</h2><p>${esc(game.developer)} · ${esc(game.genre)}</p>${platform(game)}</div></div>
     <div class="detail-actions"><a class="button button-dark" href="${safeUrl(game.url)}" target="_blank" rel="noopener noreferrer">Mở ${game.platform === "ios" ? "App Store" : "Google Play"} ↗</a><button class="button button-white" data-watch="${esc(game.key)}">${icon("bookmark")}${watchlist.includes(game.key) ? "Bỏ theo dõi" : "Thêm vào theo dõi"}</button></div>
+    ${lifetimeCard(game)}
     <div id="download-chart"></div>
     <h3 class="detail-section">Biến động thứ hạng · ${filters.days} ngày</h3>
     <div class="chart-wrap">${chart(game)}<div class="chart-legend"><span>Thứ hạng nhỏ hơn = vị trí cao hơn</span><span>${esc(countryName(game.country))} · Top miễn phí</span></div></div>
@@ -456,6 +473,11 @@ function exportCsv() {
       "download_provider",
       "downloads_as_of",
       "download_metric",
+      "lifetime_downloads",
+      "lifetime_kind",
+      "lifetime_as_of",
+      "lifetime_source",
+      "lifetime_scope",
       "downloads",
       "growth_percent",
       "acceleration_pp",
@@ -476,6 +498,11 @@ function exportCsv() {
       g.downloadSeries[0]?.provider,
       g.downloadAsOf,
       g.downloadMetric,
+      g.lifetimeDownloads?.value,
+      g.lifetimeDownloads?.kind,
+      g.lifetimeDownloads?.date,
+      g.lifetimeDownloads?.source,
+      g.lifetimeDownloads?.scope,
       g.downloads.total,
       g.downloads.growth,
       g.downloads.acceleration,
