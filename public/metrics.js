@@ -54,6 +54,41 @@ export function downloadMetrics(records, day, days) {
   };
 }
 
+export function downloadTimeline(records, end, days) {
+  const byDay = new Map(records.map((p) => [p.date, p]));
+  const start = shiftDay(end, 1 - days);
+  const points = Array.from({ length: days }, (_, i) => {
+    const date = shiftDay(start, i),
+      previousDate = shiftDay(date, -days);
+    return {
+      date,
+      previousDate,
+      current: byDay.get(date) ?? null,
+      previous: byDay.get(previousDate) ?? null,
+    };
+  });
+  const available = points.filter((p) => p.current);
+  return {
+    start,
+    end,
+    points,
+    metrics: downloadMetrics(records, end, days),
+    peak: available.length
+      ? Math.max(...available.map((p) => p.current.downloads))
+      : null,
+    estimated: points.some(
+      (p) => p.current?.estimated || p.previous?.estimated,
+    ),
+    sources: [
+      ...new Set(
+        points
+          .flatMap((p) => [p.current?.source, p.previous?.source])
+          .filter(Boolean),
+      ),
+    ],
+  };
+}
+
 export function analyze(game, data, days, day = dateKey(new Date())) {
   const history = data.observations
     .filter((p) => p.key === game.key)

@@ -28,6 +28,7 @@ npm run collect
 - Lưu lịch sử mỗi game/thị trường/nền tảng theo ngày UTC; vẽ biểu đồ thứ hạng khi đủ quan sát.
 - Chọn kỳ 7 / 30 / 365 ngày; sắp xếp theo thứ hạng, tăng hạng, điểm, biến động đánh giá hoặc chỉ số lượt tải khi có dữ liệu.
 - Tính lượt tải trong kỳ, tăng trưởng và tăng tốc từ báo cáo lượt tải hằng ngày được nhập vào tool.
+- Bấm vào game để xem **biểu đồ tăng trưởng lượt tải**: chọn 7/30/90/365 ngày và ngày kết thúc, đối chiếu đường kỳ trước, xem tổng lượt tải, tăng trưởng, trung bình ngày và ngày cao nhất. Di chuột/chạm hoặc dùng phím trái/phải trên biểu đồ để đọc từng ngày; có bảng số liệu bên dưới.
 - Xuất danh sách đang lọc thành CSV; phân trang và giao diện responsive cho điện thoại.
 - Trang nguồn dữ liệu: tình trạng từng nguồn, lần chạy gần nhất, lỗi và thời điểm thành công gần nhất.
 - Tự thu thập mỗi 6 giờ khi server chạy; GitHub Actions cũng có lịch 6 giờ để tích lũy dữ liệu ngay cả khi máy cá nhân tắt. Trang đang mở tải lại dataset mỗi 5 phút.
@@ -46,6 +47,8 @@ npm run collect
 **Không sinh lượt tải giả, không lấy số đánh giá hoặc thứ hạng thay cho lượt tải.** Các cột thiếu dữ liệu hiển thị `—`. Thứ hạng và đánh giá là tín hiệu riêng. Chưa có nguồn lượt tải theo ngày được tích hợp tự động; bản đầu vẫn theo dõi liên tục được thứ hạng và thông tin cửa hàng.
 
 Lịch sử bắt đầu từ lần thu thập đầu tiên, không hồi tạo dữ liệu quá khứ. Tuần/tháng/năm là cửa sổ **7/30/365 ngày liên tiếp** tính đến ngày UTC hiện tại. Biểu đồ và so sánh dài hạn xuất hiện dần khi tích lũy đủ dữ liệu.
+
+Biểu đồ lượt tải trong chi tiết game mặc định kết thúc vào ngày mới nhất có báo cáo của game đó; ngày kết thúc luôn hiển thị rõ và có thể thay đổi. Đường nét đứt là kỳ trước có cùng số ngày, được căn theo vị trí tương ứng trong kỳ. Ngày có 0 lượt tải được vẽ tại 0; ngày thiếu dữ liệu để trống và ngắt đường, không nội suy. Chỉ tính tổng, trung bình và tăng trưởng khi đủ ngày theo yêu cầu; mức cao nhất vẫn có thể hiển thị với nhãn “trong các ngày đã có dữ liệu”. Nguồn, nhãn ước tính và độ mới của dữ liệu được hiển thị ngay dưới biểu đồ. Game chưa được nhập báo cáo lượt tải sẽ hiển thị trạng thái chưa có lịch sử.
 
 ## Tool nhập lượt tải hằng ngày
 

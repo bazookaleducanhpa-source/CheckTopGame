@@ -1,4 +1,5 @@
 import { analyze, selectGames, dateKey, shiftDay } from "./metrics.js";
+import { mountDownloadChart } from "./download-chart.js";
 
 const $ = (selector) => document.querySelector(selector);
 const icons = {
@@ -80,7 +81,8 @@ let data,
   page = 1,
   view = "overview",
   toastTimer,
-  detailKey;
+  detailKey,
+  downloadChartState;
 const pageSize = 15;
 const filters = {
   country: "vn",
@@ -277,15 +279,29 @@ function chart(game) {
 function openDetail(key) {
   const game = analyzed.find((g) => g.key === key);
   if (!game) return;
+  if (detailKey !== key) downloadChartState = null;
   detailKey = key;
-  const sources = [
-    ...new Set(
-      data.downloads.filter((p) => p.key === key).map((p) => p.source),
-    ),
-  ];
-  const n = game.downloads;
   $("#detail-content").innerHTML =
-    `<div class="eyebrow">GAME PROFILE · ${esc(countryName(game.country))}</div><div class="detail-top">${image(game)}<div><h2>${esc(game.title)}</h2><p>${esc(game.developer)} · ${esc(game.genre)}</p>${platform(game)}</div></div><div class="detail-actions"><a class="button button-dark" href="${safeUrl(game.url)}" target="_blank" rel="noopener noreferrer">Mở ${game.platform === "ios" ? "App Store" : "Google Play"} ↗</a><button class="button button-white" data-watch="${esc(game.key)}">${icon("bookmark")}${watchlist.includes(game.key) ? "Bỏ theo dõi" : "Thêm vào theo dõi"}</button></div><div class="detail-stats"><div class="detail-stat">Thứ hạng mới nhất<strong>${game.fresh && game.latest?.rank != null ? `#${game.latest.rank}` : "—"}</strong></div><div class="detail-stat">Lượt tải / ${filters.days} ngày<strong>${compact(n.total)}</strong></div><div class="detail-stat">Tăng trưởng<strong>${n.growth == null ? "—" : `${fmt(n.growth)}%`}</strong></div><div class="detail-stat">Tăng tốc (điểm %)<strong>${fmt(n.acceleration)}</strong></div></div><p class="detail-note">${n.total == null ? `Chưa đủ dữ liệu lượt tải hằng ngày (${n.count}/${filters.days} ngày trong kỳ).` : `${n.estimated ? "Ước tính" : "Theo báo cáo"}: ${fmt(n.total)} lượt tải trong ${filters.days} ngày.`} ${n.comparisonEstimated ? "So sánh có sử dụng dữ liệu ước tính." : ""}${sources.length ? `<br>Nguồn lượt tải: ${sources.map(esc).join(", ")}.` : ""}</p><h3 class="detail-section">Biến động thứ hạng · ${filters.days} ngày</h3><div class="chart-wrap">${chart(game)}<div class="chart-legend"><span>Thứ hạng nhỏ hơn = vị trí cao hơn</span><span>${esc(countryName(game.country))} · Top miễn phí</span></div></div><p class="detail-meta">Quan sát gần nhất: ${time(game.latest?.collectedAt)}<br>Điểm: ${fmt(game.score)} / 5 · ${fmt(game.ratings)} đánh giá<br>${game.platform === "android" ? `Mốc lượt cài đặt toàn cầu: ${esc(game.installs ?? "Chưa có")} (tích lũy, không phải lượt tải trong kỳ)<br>` : ""}Phiên bản: ${esc(game.version ?? "Chưa có")} · Bắt đầu theo dõi: ${time(game.firstSeen)}</p>${game.screenshots?.length ? `<h3 class="detail-section">Bên trong game</h3><div class="screenshots">${game.screenshots.map((url, i) => `<a href="${safeUrl(game.url)}" target="_blank" rel="noopener noreferrer"><img src="${safeUrl(url)}" alt="Ảnh chụp màn hình ${i + 1} của ${esc(game.title)}" loading="lazy" referrerpolicy="no-referrer"></a>`).join("")}</div>` : ""}<h3 class="detail-section">Giới thiệu</h3><div class="detail-description">${esc(game.description || "Nguồn chưa cung cấp mô tả.")}</div><p class="detail-note">Thông tin và hình ảnh từ cửa hàng game. <a href="${safeUrl(game.sourceUrl)}" target="_blank" rel="noopener noreferrer">Xem nguồn bảng xếp hạng ↗</a></p>`;
+    `<div class="eyebrow">GAME PROFILE · ${esc(countryName(game.country))}</div>
+    <div class="detail-top">${image(game)}<div><h2>${esc(game.title)}</h2><p>${esc(game.developer)} · ${esc(game.genre)}</p>${platform(game)}</div></div>
+    <div class="detail-actions"><a class="button button-dark" href="${safeUrl(game.url)}" target="_blank" rel="noopener noreferrer">Mở ${game.platform === "ios" ? "App Store" : "Google Play"} ↗</a><button class="button button-white" data-watch="${esc(game.key)}">${icon("bookmark")}${watchlist.includes(game.key) ? "Bỏ theo dõi" : "Thêm vào theo dõi"}</button></div>
+    <div id="download-chart"></div>
+    <h3 class="detail-section">Biến động thứ hạng · ${filters.days} ngày</h3>
+    <div class="chart-wrap">${chart(game)}<div class="chart-legend"><span>Thứ hạng nhỏ hơn = vị trí cao hơn</span><span>${esc(countryName(game.country))} · Top miễn phí</span></div></div>
+    <p class="detail-meta">Thứ hạng mới nhất: ${game.fresh && game.latest?.rank != null ? `#${game.latest.rank}` : "—"}<br>Quan sát gần nhất: ${time(game.latest?.collectedAt)}<br>Điểm: ${fmt(game.score)} / 5 · ${fmt(game.ratings)} đánh giá<br>${game.platform === "android" ? `Mốc lượt cài đặt toàn cầu: ${esc(game.installs ?? "Chưa có")} (tích lũy, không phải lượt tải trong kỳ)<br>` : ""}Phiên bản: ${esc(game.version ?? "Chưa có")} · Bắt đầu theo dõi: ${time(game.firstSeen)}</p>
+    ${game.screenshots?.length ? `<h3 class="detail-section">Bên trong game</h3><div class="screenshots">${game.screenshots.map((url, i) => `<a href="${safeUrl(game.url)}" target="_blank" rel="noopener noreferrer"><img src="${safeUrl(url)}" alt="Ảnh chụp màn hình ${i + 1} của ${esc(game.title)}" loading="lazy" referrerpolicy="no-referrer"></a>`).join("")}</div>` : ""}
+    <h3 class="detail-section">Giới thiệu</h3><div class="detail-description">${esc(game.description || "Nguồn chưa cung cấp mô tả.")}</div><p class="detail-note">Thông tin và hình ảnh từ cửa hàng game. <a href="${safeUrl(game.sourceUrl)}" target="_blank" rel="noopener noreferrer">Xem nguồn bảng xếp hạng ↗</a></p>`;
+  mountDownloadChart(
+    $("#download-chart"),
+    data.downloads.filter((p) => p.key === key),
+    {
+      days: filters.days,
+      ...downloadChartState,
+      onChange: (state) => {
+        downloadChartState = state;
+      },
+    },
+  );
   if (!$("#detail").open) $("#detail").showModal();
 }
 function setView(next) {
