@@ -71,7 +71,7 @@
           ><input
             id="search"
             type="search"
-            placeholder="Tìm game, nhà phát hành…"
+            placeholder="Tìm tên game, nhà phát hành hoặc link…"
             aria-label="Tìm game hoặc nhà phát hành"
           /><kbd>/</kbd></label
         >
@@ -122,6 +122,28 @@
             <div class="spotlights" id="spotlights"></div>
           </section>
           <section class="ranking-panel" id="ranking-panel">
+            <div id="search-context" class="search-context" hidden>
+              <div>
+                <strong>Tìm trên mọi thị trường và nền tảng</strong>
+                <p id="search-message" role="status" aria-live="polite"></p>
+              </div>
+              <button id="search-stores" class="button button-white small">
+                Tìm trên cửa hàng
+              </button>
+              <div class="search-store-links">
+                <a
+                  id="search-google-link"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  >Mở Google Play ↗</a
+                ><a
+                  id="search-apple-link"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  >Mở App Store ↗</a
+                >
+              </div>
+            </div>
             <div class="panel-heading">
               <div>
                 <h2 id="table-title">Toàn cảnh thị trường</h2>

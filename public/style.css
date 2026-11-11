@@ -859,6 +859,42 @@ td:first-child {
   align-items: center;
   gap: 6px;
 }
+.search-context {
+  margin: 18px 20px 0;
+  padding: 15px;
+  border-radius: 8px;
+  background: #f2f6eb;
+  border: 1px solid #e3ebd7;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.search-context > div:first-child {
+  flex: 1;
+  min-width: 180px;
+}
+.search-context strong {
+  font-size: 11px;
+  font-weight: 550;
+  color: #526e3d;
+}
+.search-context p {
+  margin: 6px 0 0;
+  color: #849371;
+  font-size: 10px;
+  line-height: 1.9;
+}
+.search-store-links {
+  width: 100%;
+  display: flex;
+  gap: 18px;
+  color: #6c8555;
+  font-size: 10px;
+}
+.search-store-links a:hover {
+  text-decoration: underline;
+}
 .page-size-label select {
   padding: 5px 8px;
   font-size: 9px;

@@ -3,6 +3,10 @@ import { readFile } from "node:fs/promises";
 import { resolve, sep, extname } from "node:path";
 import { root, loadStore } from "./tools/storage.mjs";
 import { collect } from "./tools/collect.mjs";
+import { searchStores } from "./tools/search.mjs";
+import { searchTerm } from "./public/metrics.js";
+const searchCache = new Map();
+let activeSearches = 0;
 const config = JSON.parse(
   await readFile(new URL("./config.json", import.meta.url), "utf8"),
 );
@@ -29,7 +33,53 @@ const server = createServer(async (req, res) => {
   try {
     const url = new URL(req.url, `http://127.0.0.1:${port}`);
     if (url.pathname === "/api/status")
-      return send(200, { local: true, intervalHours: config.intervalHours });
+      return send(200, {
+        local: true,
+        search: true,
+        intervalHours: config.intervalHours,
+      });
+    if (url.pathname === "/api/search") {
+      if (req.method !== "GET")
+        return send(405, { error: "Dùng GET để tìm kiếm." });
+      const query = searchTerm(url.searchParams.get("q") ?? "");
+      if (query.length < 2 || query.length > 150)
+        return send(400, { error: "Nhập từ 2 đến 150 ký tự." });
+      const hosts = new Set([
+        `127.0.0.1:${port}`,
+        `localhost:${port}`,
+        `[::1]:${port}`,
+      ]);
+      if (
+        !hosts.has(req.headers.host) ||
+        (req.headers.origin && !hosts.has(new URL(req.headers.origin).host))
+      )
+        return send(403, { error: "Yêu cầu không hợp lệ." });
+      const key = query.toLocaleLowerCase(),
+        cached = searchCache.get(key);
+      if (cached && Date.now() - cached.time < 600000)
+        return send(200, await cached.result);
+      if (activeSearches >= 2)
+        return send(429, {
+          error: "Đang xử lý tìm kiếm khác. Vui lòng thử lại sau vài giây.",
+        });
+      activeSearches++;
+      const result = searchStores(query, {
+        countries: config.countries,
+      }).finally(() => {
+        activeSearches--;
+      });
+      if (searchCache.size >= 100)
+        searchCache.delete(searchCache.keys().next().value);
+      searchCache.set(key, { time: Date.now(), result });
+      try {
+        return send(200, await result);
+      } catch {
+        searchCache.delete(key);
+        return send(502, {
+          error: "Chưa tìm được dữ liệu từ cửa hàng. Vui lòng thử lại.",
+        });
+      }
+    }
     if (url.pathname === "/api/refresh") {
       if (req.method !== "POST")
         return send(405, { error: "Dùng POST để cập nhật." });

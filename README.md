@@ -22,7 +22,8 @@ npm run collect
 ## Chức năng đã có
 
 - Dashboard và bảng xếp hạng game miễn phí, lấy dữ liệu thực từ hai cửa hàng.
-- Lọc thị trường Việt Nam / Hoa Kỳ, Android / iOS, thể loại; tìm tên game và nhà phát hành.
+- Lọc thị trường Việt Nam / Hoa Kỳ, Android / iOS, thể loại. Ô tìm kiếm tìm trên toàn danh mục, hỗ trợ tiếng Việt không dấu, tên game, nhà phát hành, package ID, App Store ID và link cửa hàng; không bị bộ lọc bảng xếp hạng che kết quả.
+- Khi chạy server, tìm trực tiếp Google Play và App Store tại VN/US sau khi ngừng gõ hoặc nhấn Enter. Có thể mở chi tiết và lưu theo dõi game ngoài top 100; thông tin game đã lưu giữ trên trình duyệt sau khi tải lại trang. Game tìm thấy chưa chắc có lịch sử lượt tải.
 - Xem icon, ảnh chụp màn hình, mô tả, phiên bản, đánh giá và link mở trực tiếp cửa hàng.
 - Lưu / bỏ theo dõi game bằng localStorage, giữ danh sách sau khi tải lại trang và đồng bộ giữa các tab cùng trình duyệt.
 - Lưu lịch sử mỗi game/thị trường/nền tảng theo ngày UTC; vẽ biểu đồ thứ hạng khi đủ quan sát.
@@ -124,6 +125,8 @@ npm run build
 ```
 
 Thư mục `dist/` là website static, có thể đưa lên host static hoặc GitHub Pages. Không cần backend để đọc dữ liệu, tìm kiếm, theo dõi hay xuất CSV. Trên bản static, nút cập nhật chỉ tải lại dataset đã xuất; công việc collect chạy riêng qua CLI/Actions. Cần xuất bản lại `dist/` sau khi dataset thay đổi. Dự án chưa tự cấu hình hosting công khai.
+
+Tìm kiếm trên cửa hàng cần server Node.js (`npm run dev` hoặc `npm start`); bản static chỉ tìm trong dữ liệu đã xuất và có link mở tìm kiếm tại cửa hàng. Endpoint đọc `/api/search?q=...` có cache 10 phút và giới hạn tối đa hai yêu cầu tìm kiếm đồng thời. Các game lấy qua tìm kiếm là kết quả cửa hàng, không tự gán thứ hạng top hoặc lịch sử lượt tải. Game ngoài danh mục được lưu theo dõi trên trình duyệt; lịch thu thập của server hiện vẫn chạy theo danh mục backend.
 
 Chạy server Node.js khi cần nút thu thập trực tiếp và lịch chạy trên máy. Server mặc định chỉ lắng nghe `127.0.0.1`, không cung cấp endpoint quản trị ra Internet. Có thể đổi cổng bằng biến môi trường `PORT`.
 

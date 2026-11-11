@@ -169,6 +169,33 @@ export function analyze(game, data, days, day = dateKey(new Date())) {
   };
 }
 
+export function searchTerm(value) {
+  const text = String(value ?? "").trim();
+  try {
+    const url = new URL(text);
+    if (url.hostname === "play.google.com")
+      return url.searchParams.get("id") ?? text;
+    if (url.hostname === "apps.apple.com")
+      return url.pathname.match(/\/id(\d+)/)?.[1] ?? text;
+  } catch {}
+  return text;
+}
+export function normalizeSearch(value) {
+  return searchTerm(value)
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .replace(/[đĐ]/g, "d")
+    .toLocaleLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim();
+}
+export function matchesSearch(game, query) {
+  const terms = normalizeSearch(query).split(/\s+/).filter(Boolean);
+  const text = normalizeSearch(
+    `${game.title} ${game.developer} ${game.id ?? game.key}`,
+  );
+  return terms.length > 0 && terms.every((term) => text.includes(term));
+}
 export function selectGames(games, filters, watchlist = []) {
   let list = games.filter(
     (g) =>
@@ -176,10 +203,7 @@ export function selectGames(games, filters, watchlist = []) {
       (!filters.platform || g.platform === filters.platform) &&
       (!filters.genre || g.genre === filters.genre) &&
       (!filters.watchOnly || watchlist.includes(g.key)) &&
-      (!filters.search ||
-        `${g.title} ${g.developer}`
-          .toLocaleLowerCase()
-          .includes(filters.search.toLocaleLowerCase())),
+      (!filters.search || matchesSearch(g, filters.search)),
   );
   const getters = {
     rank: (g) => (g.fresh ? -(g.latest?.rank ?? Infinity) : -Infinity),

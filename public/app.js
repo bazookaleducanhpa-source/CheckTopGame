@@ -1,4 +1,11 @@
-import { analyze, selectGames, dateKey, shiftDay } from "./metrics.js";
+import {
+  analyze,
+  selectGames,
+  dateKey,
+  shiftDay,
+  normalizeSearch,
+  matchesSearch,
+} from "./metrics.js";
 import { mountDownloadChart } from "./download-chart.js";
 
 const $ = (selector) => document.querySelector(selector);
@@ -84,6 +91,26 @@ let data,
   toastTimer,
   detailKey,
   downloadChartState;
+let remoteGames = [],
+  savedGames = [],
+  searchMessage = "",
+  searchTimer,
+  searchController,
+  searchRevision = 0;
+try {
+  const saved = JSON.parse(
+    localStorage.getItem("checktopgame:discovered") ?? "[]",
+  );
+  if (Array.isArray(saved))
+    savedGames = saved.filter(
+      (g) =>
+        g &&
+        typeof g.key === "string" &&
+        typeof g.title === "string" &&
+        ["ios", "android"].includes(g.platform) &&
+        ["vn", "us"].includes(g.country),
+    );
+} catch {}
 let pageSize = 15;
 const filters = {
   country: "vn",
@@ -124,7 +151,7 @@ function watchButton(game) {
   return `<button class="watch-button ${saved ? "saved" : ""}" data-watch="${esc(game.key)}" aria-pressed="${saved}" aria-label="${saved ? "Bỏ theo dõi" : "Theo dõi"} ${esc(game.title)}">${icon("bookmark")}</button>`;
 }
 function gamePreview(game) {
-  return `<button class="game-preview" data-detail="${esc(game.key)}">${image(game)}<span class="game-text"><span class="game-title">${esc(game.title)}</span><span class="game-developer">${esc(game.developer)}</span></span></button>`;
+  return `<button class="game-preview" data-detail="${esc(game.key)}">${image(game)}<span class="game-text"><span class="game-title">${esc(game.title)}</span><span class="game-developer">${esc(game.developer)}${filters.search ? ` · ${esc(countryName(game.country))}` : ""}</span></span></button>`;
 }
 function renderStats() {
   const market = analyzed.filter(
@@ -198,7 +225,32 @@ function downloadCell(g) {
   return `${g.downloads.total == null ? '<span class="empty-value">—</span>' : compact(g.downloads.total)}<span class="cell-sub">${g.downloads.total == null ? `${g.downloads.count}/${filters.days} ngày dữ liệu` : label}</span><span class="cell-sub">${g.downloadScope === "global" ? "Toàn cầu" : esc(countryName(g.downloadScope))} · đến ${g.downloadAsOf}</span>`;
 }
 function renderTable() {
-  filtered = selectGames(analyzed, filters, watchlist);
+  const searching = !!filters.search;
+  if (searching) {
+    const keys = new Set(remoteGames.map((g) => g.key)),
+      term = normalizeSearch(filters.search);
+    const score = (g) =>
+      normalizeSearch(g.title) === term
+        ? 1000
+        : matchesSearch(g, filters.search)
+          ? 100
+          : 0;
+    filtered = analyzed
+      .filter((g) => matchesSearch(g, filters.search) || keys.has(g.key))
+      .sort((a, b) => score(b) - score(a) || a.title.localeCompare(b.title));
+  } else filtered = selectGames(analyzed, filters, watchlist);
+  $("#search-context").hidden = !searching;
+  $(".ranking-panel .filters").hidden = searching;
+  $(".table-meta label").hidden = searching;
+  if (searching) {
+    $("#search-message").textContent =
+      searchMessage ||
+      "Đang tìm trong danh mục. Kết quả không bị giới hạn bởi bộ lọc bảng xếp hạng.";
+    $("#search-google-link").href =
+      `https://play.google.com/store/search?c=apps&q=${encodeURIComponent(filters.search)}`;
+    $("#search-apple-link").href =
+      `https://apps.apple.com/us/search?term=${encodeURIComponent(filters.search)}`;
+  }
   const pages = Math.max(1, Math.ceil(filtered.length / pageSize));
   page = Math.min(page, pages);
   const offset = (page - 1) * pageSize,
@@ -211,7 +263,7 @@ function renderTable() {
     .join("");
   $("#empty").hidden = rows.length > 0;
   $("#result-count").textContent =
-    `${filtered.length} game · ${countryName(filters.country)}`;
+    `${filtered.length} game · ${searching ? "Mọi thị trường" : countryName(filters.country)}`;
   $("#pagination-info").textContent = filtered.length
     ? `${offset + 1}–${Math.min(offset + pageSize, filtered.length)} trong ${filtered.length} game · Trang ${page}/${pages}`
     : "0 game";
@@ -221,7 +273,14 @@ function renderTable() {
 }
 function render() {
   if (!data) return;
-  analyzed = data.games.map((g) => analyze(g, data, filters.days));
+  const pool = new Map();
+  for (const game of [
+    ...data.games,
+    ...savedGames.filter((g) => watchlist.includes(g.key)),
+    ...remoteGames,
+  ])
+    if (!pool.has(game.key)) pool.set(game.key, game);
+  analyzed = [...pool.values()].map((g) => analyze(g, data, filters.days));
   $("#dashboard").hidden = false;
   $("#watch-count").textContent = watchlist.length;
   const currentSources = data.sources.filter(
@@ -232,7 +291,7 @@ function render() {
     data.updatedAt && Date.now() - Date.parse(data.updatedAt) > 24 * 3600000;
   $("#data-status").innerHTML =
     `<span class="status-dot ${errors || old ? "error" : ""}"></span><strong>${errors ? "Có nguồn tạm lỗi" : old ? "Dữ liệu quá 24 giờ" : "Đã kết nối nguồn dữ liệu"}</strong><span class="status-divider"></span><span>Cập nhật ${time(data.updatedAt)}</span><span class="status-divider"></span><span>Chu kỳ thu thập 6 giờ</span>`;
-  $("#spotlight-section").hidden = view !== "overview";
+  $("#spotlight-section").hidden = view !== "overview" || !!filters.search;
   $("#ranking-panel").hidden = view === "sources";
   $("#sources-panel").hidden = view !== "sources";
   $("#stats").hidden = view === "sources";
@@ -249,8 +308,11 @@ function render() {
     watchlist: "Lưu những game bạn quan tâm. Theo dõi hành trình tăng trưởng.",
     sources: "Kiểm tra nguồn, độ mới và tình trạng thu thập dữ liệu.",
   }[view];
-  $("#table-title").textContent =
-    view === "watchlist" ? "Game đang theo dõi" : "Toàn cảnh thị trường";
+  $("#table-title").textContent = filters.search
+    ? `Kết quả tìm kiếm: ${filters.search}`
+    : view === "watchlist"
+      ? "Game đang theo dõi"
+      : "Toàn cảnh thị trường";
   renderStats();
   renderSpotlights();
   renderTable();
@@ -316,6 +378,7 @@ function openDetail(key) {
   if (!$("#detail").open) $("#detail").showModal();
 }
 function setView(next) {
+  if (next !== "ranking" && filters.search) clearSearch();
   view = next;
   filters.watchOnly = next === "watchlist";
   page = 1;
@@ -325,6 +388,7 @@ function setView(next) {
   render();
 }
 function resetFilters() {
+  clearSearch();
   Object.assign(filters, { platform: "", genre: "", search: "", sort: "rank" });
   $("#search").value = "";
   $("#genre").value = "";
@@ -334,6 +398,49 @@ function resetFilters() {
     .forEach((b) => b.classList.toggle("selected", b.dataset.platform === ""));
   page = 1;
   render();
+}
+function clearSearch() {
+  clearTimeout(searchTimer);
+  searchController?.abort();
+  searchRevision++;
+  remoteGames = [];
+  searchMessage = "";
+  filters.search = "";
+  $("#search").value = "";
+}
+async function searchRemote(query = filters.search, revision = searchRevision) {
+  if (normalizeSearch(query).length < 2 || query !== filters.search) return;
+  searchController?.abort();
+  searchController = new AbortController();
+  searchMessage =
+    "Đang tìm trực tiếp trên Google Play và App Store tại Việt Nam/Mỹ…";
+  $("#search-stores").disabled = true;
+  renderTable();
+  try {
+    const response = await fetch(
+      `./api/search?q=${encodeURIComponent(query)}`,
+      { signal: searchController.signal },
+    );
+    if (!response.ok)
+      throw new Error(
+        response.status === 404
+          ? "Chưa kết nối được tìm kiếm cửa hàng. Bạn có thể mở cửa hàng bằng các liên kết bên dưới."
+          : "Tìm kiếm cửa hàng tạm thời lỗi. Bấm tìm lại để thử lại.",
+      );
+    const result = await response.json();
+    if (revision !== searchRevision || query !== filters.search) return;
+    remoteGames = Array.isArray(result.games) ? result.games : [];
+    searchMessage = `Đã tìm trên cả hai cửa hàng tại Việt Nam/Mỹ. ${remoteGames.length} kết quả từ cửa hàng.${result.warnings?.length ? " " + result.warnings.join(" ") : ""} Game ngoài bảng xếp hạng có thể chưa có lịch sử lượt tải.`;
+    page = 1;
+    render();
+  } catch (error) {
+    if (error.name !== "AbortError" && revision === searchRevision) {
+      searchMessage = error.message;
+      renderTable();
+    }
+  } finally {
+    if (revision === searchRevision) $("#search-stores").disabled = false;
+  }
 }
 function exportCsv() {
   const rows = [
@@ -442,7 +549,24 @@ document.addEventListener("click", (event) => {
       : [...watchlist, key];
     let persisted = true;
     try {
+      const discovered = analyzed.find((g) => g.key === key);
+      if (!exists && discovered && !data.games.some((g) => g.key === key)) {
+        const {
+          history,
+          latest,
+          baseline,
+          downloadSeries,
+          downloads,
+          ...metadata
+        } = discovered;
+        savedGames = [...savedGames.filter((g) => g.key !== key), metadata];
+      }
+      savedGames = savedGames.filter((g) => watchlist.includes(g.key));
       localStorage.setItem("checktopgame:watchlist", JSON.stringify(watchlist));
+      localStorage.setItem(
+        "checktopgame:discovered",
+        JSON.stringify(savedGames),
+      );
     } catch {
       persisted = false;
     }
@@ -483,10 +607,32 @@ document.addEventListener("click", (event) => {
     event.target.closest("dialog").close();
 });
 $("#search").addEventListener("input", (event) => {
+  clearTimeout(searchTimer);
+  searchController?.abort();
+  searchRevision++;
+  remoteGames = [];
+  searchMessage = "";
+  $("#search-stores").disabled = false;
   filters.search = event.target.value.trim();
   page = 1;
-  if (view === "sources") setView("ranking");
+  if (filters.search && view !== "ranking") setView("ranking");
   else render();
+  if (normalizeSearch(filters.search).length >= 2) {
+    const query = filters.search,
+      revision = searchRevision;
+    searchTimer = setTimeout(() => searchRemote(query, revision), 800);
+  }
+});
+$("#search").addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    clearTimeout(searchTimer);
+    searchRemote();
+  }
+});
+$("#search-stores").addEventListener("click", () => {
+  clearTimeout(searchTimer);
+  searchRemote();
 });
 for (const id of ["country", "genre", "sort"])
   $(`#${id}`).addEventListener("change", (e) => {
