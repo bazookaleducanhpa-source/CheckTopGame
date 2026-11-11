@@ -11,7 +11,7 @@ npm ci
 npm start
 ```
 
-Mở **http://localhost:3000**. Repository đã có dữ liệu thật từ top 30 × 2 nền tảng × 2 quốc gia, không phải dữ liệu demo. Danh mục giữ cả game đã rời top nên tổng số bản ghi có thể lớn hơn 120. Thời điểm quan sát được hiển thị trên website. Một game có thể xuất hiện ở nhiều thị trường.
+Mở **http://localhost:3000**. Tool lấy top **100 game miễn phí cho mỗi nền tảng tại mỗi quốc gia**: 100 Google Play + 100 App Store tại Việt Nam và tương tự tại Hoa Kỳ (tối đa 400 vị trí hiện tại). Danh mục giữ cả game đã rời top nên tổng số bản ghi có thể lớn hơn 400. Thời điểm quan sát được hiển thị trên website. Một game có thể xuất hiện ở nhiều thị trường.
 
 Lấy dữ liệu mới bằng nút **Cập nhật dữ liệu** khi server đang chạy, hoặc:
 
@@ -29,7 +29,7 @@ npm run collect
 - Chọn kỳ 7 / 30 / 365 ngày; sắp xếp theo thứ hạng, tăng hạng, điểm, biến động đánh giá hoặc chỉ số lượt tải khi có dữ liệu.
 - Tự lấy lịch sử Android từ CivCharts (dự phòng AppCurves), đọc bộ đếm Google Play trực tiếp và lấy ước tính iOS từ các trang AppTrendKit công khai. Có thể nhập thêm báo cáo riêng.
 - Bấm vào game để xem **biểu đồ tăng trưởng lượt tải**: chọn 7/30/90/365 ngày và ngày kết thúc, đối chiếu đường kỳ trước, xem tổng lượt tải, tăng trưởng, trung bình ngày và ngày cao nhất. Di chuột/chạm hoặc dùng phím trái/phải trên biểu đồ để đọc từng ngày; có bảng số liệu bên dưới.
-- Xuất danh sách đang lọc thành CSV; phân trang và giao diện responsive cho điện thoại.
+- Xuất danh sách đang lọc thành CSV; chọn 15/30/50/100 dòng mỗi trang và giao diện responsive cho điện thoại.
 - Trang nguồn dữ liệu: tình trạng từng nguồn, lần chạy gần nhất, lỗi và thời điểm thành công gần nhất.
 - Tự thu thập mỗi 6 giờ khi server chạy; GitHub Actions cũng có lịch 6 giờ để tích lũy dữ liệu ngay cả khi máy cá nhân tắt. Trang đang mở tải lại dataset mỗi 5 phút.
 
@@ -62,7 +62,7 @@ Lệnh này cũng tự chạy bên trong `npm run collect`, server và workflow 
 - **CivCharts:** đọc JSON mà trang chi tiết game công khai đang dùng; chỉ lấy chuỗi `series.android.installs` có ID khớp. Giữ bộ đếm gốc và tính chênh lệch ngày liền kề.
 - **AppCurves:** dự phòng khi không có lịch sử CivCharts; dùng Markdown công khai `/app/<package>.md`, chỉ lấy các quan sát mà nguồn hiển thị miễn phí. API đầy đủ và lịch sử bị khóa không được truy cập.
 - **Google Play:** mỗi lần đọc trang game, lưu bộ đếm chi tiết công khai vào lịch sử riêng. Cần ít nhất hai ngày liên tiếp để sinh một điểm biến động; nguồn này giúp tiếp tục tích lũy nếu archive ngoài không có game.
-- **AppTrendKit:** đọc danh mục Games, chỉ chọn game có số ước tính công khai trong bảng; lấy bảng `Daily app metrics` từ trang game đúng App Store ID. Các giá trị K/M/B được chuyển thành số và giữ nhãn ước tính. Không coi tổng đã làm mượt trên trang là tổng của chuỗi ngày thô.
+- **AppTrendKit:** tìm game qua danh mục Games, App Explorer lọc Games và Top Grossing Games; chỉ chọn game có số ước tính công khai trong bảng. Lấy bảng `Daily app metrics` từ trang game đúng App Store ID. Các giá trị K/M/B được chuyển thành số và giữ nhãn ước tính. Không coi tổng đã làm mượt trên trang là tổng của chuỗi ngày thô.
 - Nguồn trả 401/402/403/429 sẽ dừng chuỗi yêu cầu tới nguồn đó, giữ dữ liệu cũ và ghi tình trạng. Không vượt đăng nhập, CAPTCHA hoặc giới hạn trả phí. Yêu cầu được giãn cách; có thể điều chỉnh `downloads` trong `config.json`.
 - Dữ liệu toàn cầu dùng key `android:global:<id>` / `ios:global:<id>`. Game và thứ hạng vẫn thuộc VN/US. Báo cáo nhập riêng cho một thị trường được ưu tiên, nguồn toàn cầu là lựa chọn riêng. CSV có các cột scope/provider/as-of/metric.
 
@@ -104,7 +104,7 @@ Sửa `config.json`:
 ```json
 {
   "countries": ["vn", "us"],
-  "limit": 30,
+  "limit": 100,
   "intervalHours": 6
 }
 ```
@@ -162,7 +162,7 @@ tests/                 Kiểm thử dữ liệu và trình duyệt
 
 - [Google Play scraper](https://github.com/facundoolano/google-play-scraper) — thư viện đọc dữ liệu công khai, có thể cần cập nhật khi cửa hàng thay đổi cấu trúc.
 - [Apple Search / Lookup API](https://performance-partners.apple.com/search-api).
-- [Apple RSS game miễn phí Việt Nam](https://itunes.apple.com/vn/rss/topfreeapplications/limit=30/genre=6014/json).
+- [Apple RSS game miễn phí Việt Nam](https://itunes.apple.com/vn/rss/topfreeapplications/limit=100/genre=6014/json).
 - [CivCharts](https://civcharts.com/) — lịch sử bộ đếm Android từ các lần quan sát của nguồn.
 - [AppCurves: dữ liệu và giới hạn](https://appcurves.com/llms.txt) — bộ đếm toàn cầu và Markdown công khai; API đầy đủ cần Pro.
 - [AppTrendKit Games](https://www.apptrendkit.com/categories/games) — số ước tính iOS; [ví dụ trang có lịch sử từng ngày](https://www.apptrendkit.com/apps/ios/1617391485).

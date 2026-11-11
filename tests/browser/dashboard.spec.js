@@ -86,3 +86,18 @@ test("server refuses cross-origin refresh and path traversal", async ({
   const wrongMethod = await request.get("/api/refresh");
   expect(wrongMethod.status()).toBe(405);
 });
+
+test("top 100 platform lists can be displayed on one page", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.locator("#page-size").selectOption("100");
+  await page.locator('[data-platform="android"]').click();
+  await expect(page.locator("#game-rows tr")).toHaveCount(100);
+  await page.locator('[data-platform="ios"]').click();
+  await expect(page.locator("#game-rows tr")).toHaveCount(100);
+  await page.locator("#country").selectOption("us");
+  await expect(page.locator("#game-rows tr")).toHaveCount(100);
+  await page.locator("#page-size").selectOption("15");
+  await expect(page.locator("#game-rows tr")).toHaveCount(15);
+});

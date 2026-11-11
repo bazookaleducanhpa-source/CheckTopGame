@@ -845,11 +845,22 @@ td:first-child {
   fill: #dceacb;
 }
 .table-footer {
+  flex-wrap: wrap;
+  gap: 10px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 15px 23px;
   color: #939e87;
+  font-size: 9px;
+}
+.page-size-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.page-size-label select {
+  padding: 5px 8px;
   font-size: 9px;
 }
 .table-footer > div {

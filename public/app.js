@@ -84,7 +84,7 @@ let data,
   toastTimer,
   detailKey,
   downloadChartState;
-const pageSize = 15;
+let pageSize = 15;
 const filters = {
   country: "vn",
   platform: "",
@@ -496,6 +496,11 @@ for (const id of ["country", "genre", "sort"])
   });
 $("#prev").addEventListener("click", () => {
   page--;
+  renderTable();
+});
+$("#page-size").addEventListener("change", (event) => {
+  pageSize = Number(event.target.value);
+  page = 1;
   renderTable();
 });
 $("#next").addEventListener("click", () => {

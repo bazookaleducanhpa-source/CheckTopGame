@@ -23,6 +23,11 @@ export const PROVIDERS = {
     url: "https://play.google.com/store/games",
   },
 };
+export const PUBLIC_IOS_DIRECTORIES = [
+  "https://www.apptrendkit.com/categories/games",
+  "https://www.apptrendkit.com/explore?category=Games",
+  "https://www.apptrendkit.com/categories/games/top-grossing",
+];
 export function validDay(day, today = dateKey(new Date())) {
   return (
     typeof day === "string" &&

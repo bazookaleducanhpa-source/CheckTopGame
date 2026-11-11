@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 import {
   PROVIDERS,
+  PUBLIC_IOS_DIRECTORIES,
   parseCivCharts,
   parseAppCurves,
   parseTrendKit,
@@ -77,7 +78,13 @@ export async function collectDownloadData(
     ))
       daily.set(`${row.key}|${provider}|${row.date}`, row);
   }
-  const android = [...apps.values()].filter((g) => g.platform === "android");
+  const android = [...apps.values()]
+    .filter((g) => g.platform === "android")
+    .sort(
+      (a, b) =>
+        String(b.lastSeen ?? "").localeCompare(String(a.lastSeen ?? "")) ||
+        (a.rank ?? Infinity) - (b.rank ?? Infinity),
+    );
   // Our own counter observations continue even when external archives are unavailable.
   for (const game of android) {
     const observed = data.games
@@ -107,7 +114,7 @@ export async function collectDownloadData(
     let consecutiveErrors = 0;
     for (const game of android.slice(
       0,
-      config.downloads?.maxAndroidApps ?? 100,
+      config.downloads?.maxAndroidApps ?? 250,
     )) {
       if (checkedToday(provider, game.id)) continue;
       // AppCurves is a fallback archive; do not request it when CivCharts already has history.
@@ -168,18 +175,35 @@ export async function collectDownloadData(
   if (ios.some((g) => !checkedToday("apptrendkit", g.id))) {
     try {
       let publicIds;
-      if (data.publicIosDownloadApps?.date === day)
+      if (
+        data.publicIosDownloadApps?.date === day &&
+        PUBLIC_IOS_DIRECTORIES.every((url) =>
+          data.publicIosDownloadApps.sources?.includes(url),
+        )
+      )
         publicIds = new Set(data.publicIosDownloadApps.ids);
       else {
-        publicIds = publicTrendKitApps(
-          await (await fetchPublic(PROVIDERS.apptrendkit.url)).text(),
+        publicIds = new Set(
+          data.publicIosDownloadApps?.date === day
+            ? data.publicIosDownloadApps.ids
+            : [],
         );
-        data.publicIosDownloadApps = { date: day, ids: [...publicIds] };
+        const sources = [];
+        for (const url of PUBLIC_IOS_DIRECTORIES) {
+          const ids = publicTrendKitApps(await (await fetchPublic(url)).text());
+          for (const id of ids) publicIds.add(id);
+          sources.push(url);
+        }
+        data.publicIosDownloadApps = {
+          date: day,
+          ids: [...publicIds],
+          sources,
+        };
       }
       let consecutiveErrors = 0;
       for (const game of ios
         .filter((g) => publicIds.has(g.id))
-        .slice(0, config.downloads?.maxIosApps ?? 30)) {
+        .slice(0, config.downloads?.maxIosApps ?? 200)) {
         if (checkedToday("apptrendkit", game.id)) continue;
         const provider = "apptrendkit",
           sourceUrl = `https://www.apptrendkit.com/apps/ios/${game.id}`;
