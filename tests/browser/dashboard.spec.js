@@ -44,7 +44,9 @@ test("live catalog, filters, details, watchlist persistence and export", async (
   await page.locator("#reset").click();
   await expect(page.locator("#game-rows tr")).toHaveCount(15);
   await page.locator('[data-view="sources"]').click();
-  await expect(page.locator(".source-card")).toHaveCount(5);
+  await expect(page.locator(".source-card")).toHaveCount(
+    catalog.sources.length + 1,
+  );
   await page.locator("#help").click();
   await expect(page.locator("#method")).toBeVisible();
   expect(errors).toEqual([]);

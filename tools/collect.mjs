@@ -3,6 +3,7 @@ import { pathToFileURL } from "node:url";
 import { apple, google } from "./providers.mjs";
 import { loadStore, saveStore, exclusive } from "./storage.mjs";
 import { dateKey, shiftDay } from "../public/metrics.js";
+import { collectDownloadData } from "./collect-downloads.mjs";
 
 export async function collect() {
   return exclusive(async () => {
@@ -126,6 +127,7 @@ export async function collect() {
       (p) => p.date >= shiftDay(date, -1100),
     );
     data.updatedAt = now;
+    await collectDownloadData(data, { now });
     await saveStore(data);
     const summary = {
       updatedAt: now,

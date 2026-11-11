@@ -27,7 +27,7 @@ npm run collect
 - Lưu / bỏ theo dõi game bằng localStorage, giữ danh sách sau khi tải lại trang và đồng bộ giữa các tab cùng trình duyệt.
 - Lưu lịch sử mỗi game/thị trường/nền tảng theo ngày UTC; vẽ biểu đồ thứ hạng khi đủ quan sát.
 - Chọn kỳ 7 / 30 / 365 ngày; sắp xếp theo thứ hạng, tăng hạng, điểm, biến động đánh giá hoặc chỉ số lượt tải khi có dữ liệu.
-- Tính lượt tải trong kỳ, tăng trưởng và tăng tốc từ báo cáo lượt tải hằng ngày được nhập vào tool.
+- Tự lấy lịch sử Android từ CivCharts (dự phòng AppCurves), đọc bộ đếm Google Play trực tiếp và lấy ước tính iOS từ các trang AppTrendKit công khai. Có thể nhập thêm báo cáo riêng.
 - Bấm vào game để xem **biểu đồ tăng trưởng lượt tải**: chọn 7/30/90/365 ngày và ngày kết thúc, đối chiếu đường kỳ trước, xem tổng lượt tải, tăng trưởng, trung bình ngày và ngày cao nhất. Di chuột/chạm hoặc dùng phím trái/phải trên biểu đồ để đọc từng ngày; có bảng số liệu bên dưới.
 - Xuất danh sách đang lọc thành CSV; phân trang và giao diện responsive cho điện thoại.
 - Trang nguồn dữ liệu: tình trạng từng nguồn, lần chạy gần nhất, lỗi và thời điểm thành công gần nhất.
@@ -39,16 +39,34 @@ npm run collect
 | --- | --- |
 | Thứ hạng | Bảng game miễn phí Google Play và Apple RSS, theo từng quốc gia |
 | Tên, ảnh, mô tả, đánh giá | Trang Google Play và Apple Lookup; có thể thiếu nếu nguồn lỗi hoặc không có dữ liệu |
-| Mốc cài đặt Android | Mốc tích lũy công khai trên Google Play, có phạm vi toàn cầu; không dùng làm lượt tải trong kỳ hoặc lượt tải tại quốc gia đang chọn |
-| Lượt tải theo ngày | Cần nhập báo cáo từ nguồn riêng; nguồn công khai hiện dùng không có chỉ số này cho mọi game |
+| Bộ đếm Android | Giá trị chi tiết `maxInstalls` trong dữ liệu trang Google Play, bên cạnh mốc làm tròn; lưu quan sát trực tiếp và lịch sử công khai |
+| Biến động Android theo ngày | Chênh lệch bộ đếm giữa **hai ngày liên tiếp** từ cùng nguồn; toàn cầu, là tín hiệu tăng trưởng, không phải báo cáo acquisition/người dùng mới |
+| Lượt tải iOS theo ngày | Ước tính đã làm tròn từ bảng `Daily app metrics` trên các trang game công khai của AppTrendKit; gắn nhãn nguồn, độ tin cậy và phạm vi toàn cầu |
 | Tăng trưởng lượt tải | Chỉ tính khi đủ dữ liệu cho hai kỳ liên tiếp và kỳ trước lớn hơn 0 |
 | Tăng tốc lượt tải | Chênh lệch tỷ lệ tăng trưởng giữa hai kỳ, đơn vị điểm phần trăm; cần ba kỳ dữ liệu |
 
-**Không sinh lượt tải giả, không lấy số đánh giá hoặc thứ hạng thay cho lượt tải.** Các cột thiếu dữ liệu hiển thị `—`. Thứ hạng và đánh giá là tín hiệu riêng. Chưa có nguồn lượt tải theo ngày được tích hợp tự động; bản đầu vẫn theo dõi liên tục được thứ hạng và thông tin cửa hàng.
+**Không sinh lượt tải giả, không lấy số đánh giá hoặc thứ hạng thay cho lượt tải.** Các cột thiếu dữ liệu hiển thị `—`. Thứ hạng và đánh giá là tín hiệu riêng. Chênh lệch bộ đếm và ước tính của bên thứ ba không phải số lượt tải được nhà phát hành xác nhận.
 
-Lịch sử bắt đầu từ lần thu thập đầu tiên, không hồi tạo dữ liệu quá khứ. Tuần/tháng/năm là cửa sổ **7/30/365 ngày liên tiếp** tính đến ngày UTC hiện tại. Biểu đồ và so sánh dài hạn xuất hiện dần khi tích lũy đủ dữ liệu.
+Lịch sử thứ hạng của dự án bắt đầu từ lần thu thập đầu tiên. Lịch sử lượt tải được nạp lại từ các quan sát có ngày rõ ràng trên nguồn công khai, không hồi tạo bằng mô hình của dự án. Tuần/tháng/năm là cửa sổ **7/30/365 ngày liên tiếp**, tính đến ngày dữ liệu mới nhất của từng nguồn đối với lượt tải; ngày kết thúc luôn được hiển thị. Năm vẫn có thể thiếu vì nguồn chưa có đủ lịch sử.
 
-Biểu đồ lượt tải trong chi tiết game mặc định kết thúc vào ngày mới nhất có báo cáo của game đó; ngày kết thúc luôn hiển thị rõ và có thể thay đổi. Đường nét đứt là kỳ trước có cùng số ngày, được căn theo vị trí tương ứng trong kỳ. Ngày có 0 lượt tải được vẽ tại 0; ngày thiếu dữ liệu để trống và ngắt đường, không nội suy. Chỉ tính tổng, trung bình và tăng trưởng khi đủ ngày theo yêu cầu; mức cao nhất vẫn có thể hiển thị với nhãn “trong các ngày đã có dữ liệu”. Nguồn, nhãn ước tính và độ mới của dữ liệu được hiển thị ngay dưới biểu đồ. Game chưa được nhập báo cáo lượt tải sẽ hiển thị trạng thái chưa có lịch sử.
+Biểu đồ lượt tải trong chi tiết game có bộ chọn **nguồn** và mặc định kết thúc vào ngày mới nhất có dữ liệu. Đường nét đứt là kỳ trước có cùng số ngày. Ngày có 0 lượt tải được vẽ tại 0; ngày thiếu để trống và ngắt đường. Không chia đều tổng tháng thành ngày; không phân bổ chênh lệch nhiều ngày thành từng ngày; bộ đếm bị giảm do hiệu chỉnh không bị chuyển thành lượt tải âm hoặc 0. Chỉ tính tổng, trung bình và tăng trưởng khi đủ ngày. Các nguồn và phạm vi được giữ riêng, không nối ngày của hai nhà cung cấp thành một chuỗi.
+
+## Tự động cào lịch sử lượt tải
+
+```bash
+npm run collect:downloads
+```
+
+Lệnh này cũng tự chạy bên trong `npm run collect`, server và workflow định kỳ. Có cache theo ngày/provider/app để không tải lại lịch sử mỗi lần bấm cập nhật. Không cần API key cho các đường công khai đang dùng.
+
+- **CivCharts:** đọc JSON mà trang chi tiết game công khai đang dùng; chỉ lấy chuỗi `series.android.installs` có ID khớp. Giữ bộ đếm gốc và tính chênh lệch ngày liền kề.
+- **AppCurves:** dự phòng khi không có lịch sử CivCharts; dùng Markdown công khai `/app/<package>.md`, chỉ lấy các quan sát mà nguồn hiển thị miễn phí. API đầy đủ và lịch sử bị khóa không được truy cập.
+- **Google Play:** mỗi lần đọc trang game, lưu bộ đếm chi tiết công khai vào lịch sử riêng. Cần ít nhất hai ngày liên tiếp để sinh một điểm biến động; nguồn này giúp tiếp tục tích lũy nếu archive ngoài không có game.
+- **AppTrendKit:** đọc danh mục Games, chỉ chọn game có số ước tính công khai trong bảng; lấy bảng `Daily app metrics` từ trang game đúng App Store ID. Các giá trị K/M/B được chuyển thành số và giữ nhãn ước tính. Không coi tổng đã làm mượt trên trang là tổng của chuỗi ngày thô.
+- Nguồn trả 401/402/403/429 sẽ dừng chuỗi yêu cầu tới nguồn đó, giữ dữ liệu cũ và ghi tình trạng. Không vượt đăng nhập, CAPTCHA hoặc giới hạn trả phí. Yêu cầu được giãn cách; có thể điều chỉnh `downloads` trong `config.json`.
+- Dữ liệu toàn cầu dùng key `android:global:<id>` / `ios:global:<id>`. Game và thứ hạng vẫn thuộc VN/US. Báo cáo nhập riêng cho một thị trường được ưu tiên, nguồn toàn cầu là lựa chọn riêng. CSV có các cột scope/provider/as-of/metric.
+
+Lần nạp đầu ngày 2026-11-11 lấy được **3.748 bản ghi ngày cho 75 game** (60 Android, 15 iOS). Đây là kết quả ở thời điểm chạy, không phải cam kết độ phủ mọi game; xem trang Nguồn dữ liệu để biết kết quả mới nhất.
 
 ## Tool nhập lượt tải hằng ngày
 
@@ -131,6 +149,8 @@ public/                Giao diện và module tính chỉ số dùng chung
 tools/
   providers.mjs        Bộ đọc dữ liệu hai cửa hàng
   collect.mjs          Thu thập, hợp nhất và lưu quan sát theo ngày
+  collect-downloads.mjs Nạp lịch sử công khai và quản lý cache từng nguồn
+  download-providers.mjs Đọc counter/Markdown/bảng iOS và suy ra biến động
   import-downloads.mjs Kiểm tra và nhập lượt tải hằng ngày
   build.mjs            Xuất bản static vào dist/
 server.mjs             Server local và lịch thu thập
@@ -143,5 +163,8 @@ tests/                 Kiểm thử dữ liệu và trình duyệt
 - [Google Play scraper](https://github.com/facundoolano/google-play-scraper) — thư viện đọc dữ liệu công khai, có thể cần cập nhật khi cửa hàng thay đổi cấu trúc.
 - [Apple Search / Lookup API](https://performance-partners.apple.com/search-api).
 - [Apple RSS game miễn phí Việt Nam](https://itunes.apple.com/vn/rss/topfreeapplications/limit=30/genre=6014/json).
+- [CivCharts](https://civcharts.com/) — lịch sử bộ đếm Android từ các lần quan sát của nguồn.
+- [AppCurves: dữ liệu và giới hạn](https://appcurves.com/llms.txt) — bộ đếm toàn cầu và Markdown công khai; API đầy đủ cần Pro.
+- [AppTrendKit Games](https://www.apptrendkit.com/categories/games) — số ước tính iOS; [ví dụ trang có lịch sử từng ngày](https://www.apptrendkit.com/apps/ios/1617391485).
 
 Hình ảnh và nội dung game thuộc chủ sở hữu tương ứng, được hiển thị kèm liên kết cửa hàng để khám phá sản phẩm. Không tự ghép hai game Android/iOS thành một sản phẩm nếu chưa xác minh.

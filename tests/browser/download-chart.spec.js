@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { dateKey, shiftDay } from "../../public/metrics.js";
+import { downloadSeriesFor } from "../../public/metrics.js";
 
 const end = dateKey(new Date());
 const game = {
@@ -122,5 +123,63 @@ test("game without daily downloads clearly explains the missing source", async (
   await page.locator('[data-download-days="365"]').click();
   await expect(page.locator("#download-chart")).toContainText(
     "Có 0/365 ngày dữ liệu",
+  );
+});
+
+test("download history collected from public sources renders on a real game", async ({
+  page,
+}) => {
+  const data = await (await page.request.get("/data/catalog.json")).json();
+  const game = data.games.find(
+    (g) =>
+      g.platform === "android" &&
+      g.country === "us" &&
+      downloadSeriesFor(g, data).some(
+        (s) => s.provider === "civcharts" && s.records.length > 14,
+      ),
+  );
+  expect(game).toBeTruthy();
+  await page.setViewportSize({ width: 1440, height: 1200 });
+  await page.goto("/");
+  await page.locator("#country").selectOption("us");
+  await page.locator("#search").fill(game.title);
+  await page.locator(`#game-rows [data-detail="${game.key}"]`).click();
+  await expect(page.locator("#download-chart .download-plot")).toBeVisible();
+  await expect(page.locator(".download-source")).toContainText("Toàn cầu");
+  await expect(page.locator(".download-source")).toContainText(
+    "Không phải lượt tải riêng",
+  );
+  await expect(page.locator(".download-source select")).toHaveValue(
+    "global|civcharts",
+  );
+  await expect(page.locator(".download-source")).toContainText("CivCharts");
+  await page.screenshot({ path: "test-results/real-download-history.png" });
+});
+
+test("choosing a provider never sums its global numbers with country reports", async ({
+  page,
+}) => {
+  const rows = downloads();
+  const global = rows.map((p) => ({
+    ...p,
+    key: "ios:global:chart-test",
+    downloads: p.downloads * 100,
+    scope: "global",
+    provider: "apptrendkit",
+    source: "AppTrendKit",
+    metric: "download-estimate",
+  }));
+  await open(page, [...rows, ...global]);
+  await expect(
+    page.locator(".download-stat").first().locator("strong"),
+  ).toHaveText("1.400");
+  await page
+    .locator(".download-source select")
+    .selectOption("global|apptrendkit");
+  await expect(
+    page.locator(".download-stat").first().locator("strong"),
+  ).toHaveText("140.000");
+  await expect(page.locator(".download-source")).toContainText(
+    "Phạm vi: Toàn cầu",
   );
 });

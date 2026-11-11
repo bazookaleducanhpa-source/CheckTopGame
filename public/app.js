@@ -65,7 +65,8 @@ const time = (value) =>
       })
     : "Chưa có";
 const countryName = (code) =>
-  ({ vn: "Việt Nam", us: "Hoa Kỳ" })[code] ?? code.toUpperCase();
+  ({ vn: "Việt Nam", us: "Hoa Kỳ", global: "Toàn cầu" })[code] ??
+  code.toUpperCase();
 const platform = (game) =>
   `<span class="platform">${icon(game.platform)}${game.platform === "ios" ? "App Store" : "Google Play"}</span>`;
 const image = (game, cls = "game-icon") =>
@@ -150,7 +151,7 @@ function renderStats() {
     stat(
       "Nguồn đang hoạt động",
       `${good}<span style="font-size:17px;color:#b3bca7"> / ${data.sources.length}</span>`,
-      "Google Play & Apple RSS / Lookup",
+      "Cửa hàng & nguồn lịch sử lượt tải",
       "database",
     ) +
     stat(
@@ -163,8 +164,8 @@ function renderStats() {
       "Có lượt tải trong kỳ",
       `${withDownloads}<span style="font-size:17px;color:#b3bca7"> / ${market.length}</span>`,
       withDownloads
-        ? "Nguồn báo cáo được gắn tại trang game"
-        : "Chờ nhập nguồn báo cáo lượt tải",
+        ? "Có nhãn nguồn, phạm vi và ngày kết thúc"
+        : "Đang tích lũy hoặc chưa có nguồn phù hợp",
       "trend",
     );
 }
@@ -185,7 +186,16 @@ function renderSpotlights() {
 }
 function renderSources() {
   $("#sources-panel").innerHTML =
-    `<p class="sources-intro">Lần chạy gần nhất: ${time(data.updatedAt)}. Dữ liệu được lưu thành lịch sử hằng ngày. Khi một nguồn lỗi, bản ghi cũ được giữ và đánh dấu thời điểm quan sát.</p><div class="sources-grid">${data.sources.map((s) => `<article class="source-card"><div class="eyebrow">${esc(countryName(s.country))} · ${s.platform === "ios" ? "APPLE" : "GOOGLE"}</div><h3>${s.platform === "ios" ? "App Store · Games" : "Google Play · Games"}</h3><span class="badge ${s.status === "error" ? "negative" : s.status === "partial" ? "neutral" : "positive"}">${s.status === "error" ? "Lỗi nguồn" : s.status === "partial" ? "Một phần" : "Đang hoạt động"}</span><div class="source-details"><br>${fmt(s.count)} game trong lần lấy gần nhất<br>Kiểm tra: ${time(s.checkedAt)}<br>Thành công gần nhất: ${time(s.lastSuccessAt)}</div>${s.error || s.warning ? `<p>${esc(s.error ?? s.warning)}</p>` : ""}<a class="button button-white small" href="${safeUrl(s.sourceUrl)}" target="_blank" rel="noopener noreferrer">Mở nguồn ↗</a></article>`).join("")}</div><article class="source-card" style="margin-top:18px"><h3>Vận hành tool thu thập</h3><p>Chạy ngay: <code>npm run collect</code>. Server đang chạy tự thu thập mỗi 6 giờ; GitHub Actions lưu dữ liệu cùng tần suất khi workflow được bật. Cấu hình thị trường và số game tại <code>config.json</code>.</p><p>Nhập dữ liệu lượt tải từ nguồn của bạn: <code>npm run import -- downloads.json</code>. Xem định dạng và hướng dẫn trong README.</p><p>Trang tự kiểm tra dữ liệu mỗi 5 phút. Trên bản static, nút cập nhật tải lại dữ liệu đã xuất; việc thu thập được thực hiện bởi tool và workflow.</p></article>`;
+    `<p class="sources-intro">Lần chạy gần nhất: ${time(data.updatedAt)}. Cửa hàng cập nhật mỗi 6 giờ; các nguồn lịch sử lượt tải được đọc tối đa một lần/ngày/game. Khi một nguồn lỗi, dữ liệu trước đó vẫn được giữ.</p><div class="sources-grid">${data.sources.map((s) => `<article class="source-card"><div class="eyebrow">${esc(countryName(s.country))} · ${s.kind === "downloads" ? "LỊCH SỬ LƯỢT TẢI" : s.platform === "ios" ? "APPLE" : "GOOGLE"}</div><h3>${esc(s.name ?? (s.platform === "ios" ? "App Store · Games" : "Google Play · Games"))}</h3><span class="badge ${s.status === "error" ? "negative" : s.status === "partial" ? "neutral" : "positive"}">${s.status === "error" ? "Lỗi nguồn" : s.status === "partial" ? "Một phần" : "Đang hoạt động"}</span><div class="source-details"><br>${fmt(s.count)} game có dữ liệu<br>Kiểm tra: ${time(s.checkedAt)}<br>Thành công gần nhất: ${time(s.lastSuccessAt)}</div>${s.error || s.warning ? `<p>${esc(s.error ?? s.warning)}</p>` : ""}<a class="button button-white small" href="${safeUrl(s.sourceUrl)}" target="_blank" rel="noopener noreferrer">Mở nguồn ↗</a></article>`).join("")}</div><article class="source-card" style="margin-top:18px"><h3>Vận hành tool thu thập</h3><p>Thu thập toàn bộ: <code>npm run collect</code>. Chỉ tìm lịch sử lượt tải: <code>npm run collect:downloads</code>. Server và GitHub Actions được cấu hình chạy mỗi 6 giờ.</p><p>Android: lưu bộ đếm Google Play trực tiếp, nạp lịch sử công khai từ CivCharts và dự phòng AppCurves. Chênh lệch bộ đếm là tín hiệu tăng trưởng, không phải báo cáo người dùng mới.</p><p>iOS: đọc bảng ước tính từng ngày trên trang game công khai của AppTrendKit. Chỉ dùng game có số liệu công khai trong danh mục Games; nguồn yêu cầu tài khoản hoặc giới hạn truy cập sẽ được bỏ qua.</p><p>Nguồn toàn cầu luôn được gắn nhãn, không gán thành lượt tải Việt Nam/Mỹ. Có thể nhập thêm báo cáo riêng bằng <code>npm run import -- downloads.json</code>.</p></article>`;
+}
+function downloadCell(g) {
+  const label =
+    g.downloadMetric === "public-counter-change"
+      ? "Biến động bộ đếm"
+      : g.downloads.estimated
+        ? "Ước tính"
+        : "Theo báo cáo";
+  return `${g.downloads.total == null ? '<span class="empty-value">—</span>' : compact(g.downloads.total)}<span class="cell-sub">${g.downloads.total == null ? `${g.downloads.count}/${filters.days} ngày dữ liệu` : label}</span><span class="cell-sub">${g.downloadScope === "global" ? "Toàn cầu" : esc(countryName(g.downloadScope))} · đến ${g.downloadAsOf}</span>`;
 }
 function renderTable() {
   filtered = selectGames(analyzed, filters, watchlist);
@@ -196,7 +206,7 @@ function renderTable() {
   $("#game-rows").innerHTML = rows
     .map(
       (g) =>
-        `<tr><td>${g.fresh && g.latest?.rank != null ? `#${g.latest.rank.toString().padStart(2, "0")}` : '<span class="empty-value">—</span>'}</td><td class="game-cell">${gamePreview(g)}</td><td>${platform(g)}</td><td>${g.downloads.total === null ? '<span class="empty-value">—</span><span class="cell-sub">Chưa đủ dữ liệu</span>' : `${compact(g.downloads.total)}<span class="cell-sub">${g.downloads.estimated ? "Ước tính" : "Theo báo cáo"} · ${filters.days} ngày</span>`}</td><td>${badge(g.downloads.growth)}${g.downloads.growth !== null && g.downloads.comparisonEstimated ? '<span class="cell-sub">Có dữ liệu ước tính</span>' : ""}</td><td>${badge(g.rankChange, "")}<span class="cell-sub">${g.rankChange == null ? "Chưa đủ lịch sử" : `Trong ${filters.days} ngày`}</span></td><td>${g.score == null ? "—" : `${fmt(g.score)} <span class="star">★</span>`}<span class="cell-sub">${compact(g.ratings)} đánh giá</span></td><td>${watchButton(g)}</td></tr>`,
+        `<tr><td>${g.fresh && g.latest?.rank != null ? `#${g.latest.rank.toString().padStart(2, "0")}` : '<span class="empty-value">—</span>'}</td><td class="game-cell">${gamePreview(g)}</td><td>${platform(g)}</td><td>${downloadCell(g)}</td><td>${badge(g.downloads.growth)}${g.downloads.growth !== null && g.downloads.comparisonEstimated ? '<span class="cell-sub">Có dữ liệu ước tính</span>' : ""}</td><td>${badge(g.rankChange, "")}<span class="cell-sub">${g.rankChange == null ? "Chưa đủ lịch sử" : `Trong ${filters.days} ngày`}</span></td><td>${g.score == null ? "—" : `${fmt(g.score)} <span class="star">★</span>`}<span class="cell-sub">${compact(g.ratings)} đánh giá</span></td><td>${watchButton(g)}</td></tr>`,
     )
     .join("");
   $("#empty").hidden = rows.length > 0;
@@ -293,10 +303,11 @@ function openDetail(key) {
     <h3 class="detail-section">Giới thiệu</h3><div class="detail-description">${esc(game.description || "Nguồn chưa cung cấp mô tả.")}</div><p class="detail-note">Thông tin và hình ảnh từ cửa hàng game. <a href="${safeUrl(game.sourceUrl)}" target="_blank" rel="noopener noreferrer">Xem nguồn bảng xếp hạng ↗</a></p>`;
   mountDownloadChart(
     $("#download-chart"),
-    data.downloads.filter((p) => p.key === key),
+    game.downloadSeries[0]?.records ?? [],
     {
       days: filters.days,
       ...downloadChartState,
+      series: game.downloadSeries,
       onChange: (state) => {
         downloadChartState = state;
       },
@@ -334,6 +345,10 @@ function exportCsv() {
       "rank",
       "observed_at",
       "period_days",
+      "download_scope",
+      "download_provider",
+      "downloads_as_of",
+      "download_metric",
       "downloads",
       "growth_percent",
       "acceleration_pp",
@@ -350,6 +365,10 @@ function exportCsv() {
       g.fresh ? g.latest?.rank : "",
       g.latest?.collectedAt,
       filters.days,
+      g.downloadScope,
+      g.downloadSeries[0]?.provider,
+      g.downloadAsOf,
+      g.downloadMetric,
       g.downloads.total,
       g.downloads.growth,
       g.downloads.acceleration,

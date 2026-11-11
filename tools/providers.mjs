@@ -110,6 +110,11 @@ export async function google(country, limit) {
           ratings: app.ratings ?? null,
           installs: app.installs ?? null,
           minInstalls: app.minInstalls ?? null,
+          publicInstalls:
+            Number.isSafeInteger(app.maxInstalls) &&
+            app.maxInstalls >= (app.minInstalls ?? 0)
+              ? app.maxInstalls
+              : null,
           version: app.version ?? null,
           released: app.released ?? null,
           updated: app.updated ? new Date(app.updated).toISOString() : null,

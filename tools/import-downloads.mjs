@@ -51,8 +51,13 @@ async function main() {
     JSON.parse(await readFile(process.argv[2], "utf8")),
     data.games,
   );
-  const map = new Map(data.downloads.map((p) => [`${p.key}|${p.date}`, p]));
-  for (const row of rows) map.set(`${row.key}|${row.date}`, row);
+  const map = new Map(
+    data.downloads.map((p) => [
+      `${p.key}|${p.provider ?? "manual"}|${p.date}`,
+      p,
+    ]),
+  );
+  for (const row of rows) map.set(`${row.key}|manual|${row.date}`, row);
   data.downloads = [...map.values()].sort((a, b) =>
     a.date.localeCompare(b.date),
   );

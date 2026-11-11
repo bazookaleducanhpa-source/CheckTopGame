@@ -1,5 +1,10 @@
 {
   "countries": ["vn", "us"],
   "limit": 30,
-  "intervalHours": 6
+  "intervalHours": 6,
+  "downloads": {
+    "maxAndroidApps": 100,
+    "maxIosApps": 30,
+    "requestDelayMs": 350
+  }
 }

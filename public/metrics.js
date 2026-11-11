@@ -89,6 +89,51 @@ export function downloadTimeline(records, end, days) {
   };
 }
 
+export function downloadSeriesFor(game, data, today = dateKey(new Date())) {
+  const id = game.id ?? game.key.split(":").slice(2).join(":");
+  const globalKey = `${game.platform}:global:${id}`;
+  const groups = new Map();
+  for (const row of data.downloads) {
+    if (![game.key, globalKey].includes(row.key) || row.date > today) continue;
+    const scope = row.key === globalKey ? "global" : game.country;
+    const provider = row.provider ?? "manual",
+      groupId = `${scope}|${provider}`;
+    if (!groups.has(groupId))
+      groups.set(groupId, {
+        id: groupId,
+        scope,
+        provider,
+        label: `${row.source} · ${scope === "global" ? "Toàn cầu" : scope.toUpperCase()}`,
+        metric: row.metric ?? "reported-downloads",
+        records: [],
+      });
+    groups.get(groupId).records.push(row);
+  }
+  const priority = {
+    civcharts: 0,
+    apptrendkit: 0,
+    appcurves: 1,
+    "google-play": 2,
+    manual: 0,
+  };
+  return [...groups.values()]
+    .map((s) => ({
+      ...s,
+      latest: s.records
+        .map((p) => p.date)
+        .sort()
+        .at(-1),
+    }))
+    .sort(
+      (a, b) =>
+        Number(b.scope === game.country) - Number(a.scope === game.country) ||
+        Number(b.latest >= shiftDay(today, -2)) -
+          Number(a.latest >= shiftDay(today, -2)) ||
+        (priority[a.provider] ?? 5) - (priority[b.provider] ?? 5) ||
+        b.records.length - a.records.length,
+    );
+}
+
 export function analyze(game, data, days, day = dateKey(new Date())) {
   const history = data.observations
     .filter((p) => p.key === game.key)
@@ -96,7 +141,8 @@ export function analyze(game, data, days, day = dateKey(new Date())) {
   const latest = history.at(-1) ?? null;
   const old = baseline(history, day, days);
   const fresh = latest && latest.date >= shiftDay(day, -1);
-  const records = data.downloads.filter((p) => p.key === game.key);
+  const downloadSeries = downloadSeriesFor(game, data, day);
+  const series = downloadSeries[0];
   return {
     ...game,
     history,
@@ -111,7 +157,15 @@ export function analyze(game, data, days, day = dateKey(new Date())) {
       fresh && old && latest.ratings != null && old.ratings != null
         ? latest.ratings - old.ratings
         : null,
-    downloads: downloadMetrics(records, day, days),
+    downloadSeries,
+    downloadScope: series?.scope ?? game.country,
+    downloadAsOf: series?.latest ?? day,
+    downloadMetric: series?.metric ?? null,
+    downloads: downloadMetrics(
+      series?.records ?? [],
+      series?.latest ?? day,
+      days,
+    ),
   };
 }
 

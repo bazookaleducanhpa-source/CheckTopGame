@@ -209,9 +209,10 @@
           <div class="method-note">
             <span data-icon="info"></span>
             <p>
-              <strong>Dữ liệu rõ nguồn, quyết định rõ ràng.</strong> Lượt tải
-              theo kỳ cần nguồn báo cáo riêng. Thứ hạng và đánh giá là các tín
-              hiệu độc lập. Lịch sử được tích lũy từ ngày bắt đầu thu thập.
+              <strong>Dữ liệu rõ nguồn, quyết định rõ ràng.</strong> Biến động
+              bộ đếm Android và lượt tải ước tính iOS được nạp từ nguồn công
+              khai. Số liệu toàn cầu được gắn nhãn riêng với thứ hạng từng quốc
+              gia.
               <button id="method-link">Xem phương pháp ↗</button>
             </p>
           </div>
@@ -244,28 +245,34 @@
       </p>
       <h3>Lượt tải & tăng trưởng</h3>
       <p>
-        Nguồn công khai đang dùng không cung cấp lượt tải hằng ngày cho mọi
-        game. Android hiển thị mốc lượt cài đặt tích lũy công khai, có phạm vi
-        toàn cầu; đây không phải lượt tải trong kỳ hay tại thị trường đã chọn.
-        iOS không có chỉ số này.
+        Android: tool đọc bộ đếm chi tiết trong dữ liệu trang Google Play và nạp
+        lịch sử công khai từ CivCharts, dự phòng AppCurves. Biểu đồ thể hiện
+        chênh lệch bộ đếm giữa hai ngày liên tiếp. Đây là tín hiệu tăng trưởng,
+        có thể trễ do lịch Google cập nhật; không phải báo cáo người dùng mới.
+        iOS: tool đọc bảng lượt tải ước tính theo ngày từ các trang game công
+        khai của AppTrendKit. Không dùng tài khoản hoặc dữ liệu bị khóa.
       </p>
       <p>
-        Nhập báo cáo lượt tải hằng ngày bằng
+        Nguồn toàn cầu luôn được gắn nhãn và không biến thành lượt tải riêng của
+        Việt Nam/Mỹ. Bạn có thể đổi nguồn trong biểu đồ hoặc nhập báo cáo bằng
         <code>npm run import -- downloads.json</code>. Website chỉ cộng kỳ khi
         đủ tất cả ngày. Tăng trưởng cần đủ hai kỳ; tăng tốc cần ba kỳ liên tiếp.
         Nguồn có ước tính được gắn nhãn “Ước tính”.
       </p>
       <h3>Tuần / tháng / năm</h3>
       <p>
-        Tương ứng 7 / 30 / 365 ngày liên tiếp, tính đến ngày UTC hiện tại. Đổi
-        hạng = hạng đầu kỳ − hạng mới nhất. Chỉ so sánh khi có quan sát gần mốc
-        đầu kỳ (tối đa 2 ngày trước mốc). Thiếu lịch sử sẽ hiển thị “—”.
+        Tương ứng 7 / 30 / 365 ngày liên tiếp. Lượt tải tính đến ngày dữ liệu
+        mới nhất của nguồn, hiển thị ngay trên bảng. Đổi hạng = hạng đầu kỳ −
+        hạng mới nhất. Chỉ so sánh khi có quan sát gần mốc đầu kỳ (tối đa 2 ngày
+        trước mốc). Thiếu lịch sử sẽ hiển thị “—”.
       </p>
       <h3>Cập nhật liên tục</h3>
       <p>
         Khi chạy server, tool cập nhật mỗi 6 giờ. GitHub Actions cũng được cấu
         hình chạy mỗi 6 giờ để lưu lịch sử vào repository; lịch thực tế phụ
-        thuộc GitHub. Trang đang mở tự kiểm tra dữ liệu mỗi 5 phút.
+        thuộc GitHub. Trang đang mở tự kiểm tra dữ liệu mỗi 5 phút. Nguồn lịch
+        sử lượt tải được đọc tối đa một lần/ngày/game và giữ lại kết quả khi
+        nguồn lỗi. Độ phủ phụ thuộc lịch sử và quyền truy cập công khai.
       </p>
       <h3>Danh sách theo dõi</h3>
       <p>
